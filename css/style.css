@@ -1,0 +1,14 @@
+/* CSS Document */
+.text-google {
+  font-family: 'Prompt', sans-serif; }
+.text-baby {
+  color: #939393;
+  font-size: 0.8rem; }
+
+.img-profile {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%; }
+
+.footer {
+  background: #EBEBEB; }
