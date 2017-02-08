@@ -21,3 +21,47 @@
 .footer{
 	background: #EBEBEB;
 }
+
+.tabs{
+	&-item{
+		border: 2px solid black;
+		&:first-child{
+		border-top-left-radius: 5px;
+		border-bottom-left-radius: 5px;
+		}
+		&:last-child{
+		border-top-right-radius: 5px;
+		border-bottom-right-radius: 5px;
+		}
+	}
+}
+
+$tabs-color: #eb9316;
+
+.tab{
+	display: inline-flex;
+	&-left{
+		border-top-left-radius: 5px;
+		border-bottom-left-radius: 5px;
+		}
+	&-right{
+		border-top-right-radius: 5px;
+		border-bottom-right-radius: 5px;
+		border-left: none;
+	}
+	&-link{
+		text-align: center;
+		color: $tabs-color;
+		border: 1px solid $tabs-color;
+		&:hover{
+			color: $tabs-color;
+		}
+		&.active{
+			color: white;
+			background: $tabs-color;
+			&:hover{
+			color: white;
+		}
+		}
+	}
+}
