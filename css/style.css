@@ -42,3 +42,6 @@
       background: #eb9316; }
       .tab-link.active:hover {
         color: white; }
+
+.img-max {
+  width: 80%; }
