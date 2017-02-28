@@ -1,5 +1,5 @@
 ﻿CACHE MANIFEST
-#1488218334
+#1488296549
 data.js
 c2runtime.js
 jquery-2.1.1.min.js
@@ -147,6 +147,8 @@ images/ui_arrow_left-sheet0.png
 images/ui_arrow_right-sheet0.png
 images/ui_home-sheet0.png
 images/credits_-sheet0.png
+images/healfx-sheet0.png
+images/criticaleffect-sheet0.png
 media/bgm.ogg
 media/clicked.ogg
 media/gameplaylayoutstart.ogg
