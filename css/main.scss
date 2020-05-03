@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto');
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@200;300;400&display=swap');
+
+body {
+    background: #fff;
+    font-family: 'Roboto','Kanit','sans-serif';
+    color: #333;
+}
+
+.cover {
+    z-index: -1;
+    position: fixed;
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    width: auto;
+}
+
+.menu-button {
+    transition: .2s;
+    font-size: .8rem;
+    margin: 0 .25rem;
+    padding-top: 1.5rem;
+    border-bottom: 4px solid;
+
+    > .link {
+        color: #999;
+    }
+    &.-aboutme {
+        border-color: #fab23a;
+        &:hover {
+            transition: .2s;
+            padding-top: 1rem;
+        }
+    }
+    &.-education {
+        border-color: #e56284;
+        animation-delay: .2s;
+        &:hover {
+            transition: .2s;
+            padding-top: 1rem;
+        }
+    }
+    &.-activities {
+        border-color: #4e97d8;
+        animation-delay: .4s;
+        &:hover {
+            transition: .2s;
+            padding-top: 1rem;
+        }
+    }
+    &.-skills {
+        border-color: #5fc9ca;
+        animation-delay: .6s;
+        &:hover {
+            transition: .2s;
+            padding-top: 1rem;
+        }
+    }
+    &.-portfolios {
+        border-color: #70cc8f;
+        animation-delay: .8s;
+        &:hover {
+            transition: .2s;
+            padding-top: 1rem;
+        }
+    }
+}
+
+.content {
+    font-family: 'Kanit';
+}
+
+.card {
+    &-text {
+        font-weight: 300;
+        >.text-muted {
+            font-family: 'Roboto','Kanit';
+        }
+    }
+}

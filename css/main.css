@@ -1,0 +1,101 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto");
+@import url("https://fonts.googleapis.com/css2?family=Kanit:wght@200;300;400&display=swap");
+body {
+  background: #fff;
+  font-family: 'Roboto','Kanit','sans-serif';
+  color: #333;
+}
+
+.cover {
+  z-index: -1;
+  position: fixed;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  width: auto;
+}
+
+.menu-button {
+  -webkit-transition: .2s;
+  transition: .2s;
+  font-size: .8rem;
+  margin: 0 .25rem;
+  padding-top: 1.5rem;
+  border-bottom: 4px solid;
+}
+
+.menu-button > .link {
+  color: #999;
+}
+
+.menu-button.-aboutme {
+  border-color: #fab23a;
+}
+
+.menu-button.-aboutme:hover {
+  -webkit-transition: .2s;
+  transition: .2s;
+  padding-top: 1rem;
+}
+
+.menu-button.-education {
+  border-color: #e56284;
+  -webkit-animation-delay: .2s;
+          animation-delay: .2s;
+}
+
+.menu-button.-education:hover {
+  -webkit-transition: .2s;
+  transition: .2s;
+  padding-top: 1rem;
+}
+
+.menu-button.-activities {
+  border-color: #4e97d8;
+  -webkit-animation-delay: .4s;
+          animation-delay: .4s;
+}
+
+.menu-button.-activities:hover {
+  -webkit-transition: .2s;
+  transition: .2s;
+  padding-top: 1rem;
+}
+
+.menu-button.-skills {
+  border-color: #5fc9ca;
+  -webkit-animation-delay: .6s;
+          animation-delay: .6s;
+}
+
+.menu-button.-skills:hover {
+  -webkit-transition: .2s;
+  transition: .2s;
+  padding-top: 1rem;
+}
+
+.menu-button.-portfolios {
+  border-color: #70cc8f;
+  -webkit-animation-delay: .8s;
+          animation-delay: .8s;
+}
+
+.menu-button.-portfolios:hover {
+  -webkit-transition: .2s;
+  transition: .2s;
+  padding-top: 1rem;
+}
+
+.content {
+  font-family: 'Kanit';
+}
+
+.card-text {
+  font-weight: 300;
+}
+
+.card-text > .text-muted {
+  font-family: 'Roboto','Kanit';
+}
+/*# sourceMappingURL=main.css.map */
