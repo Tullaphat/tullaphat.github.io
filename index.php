@@ -15,6 +15,7 @@
 <body>
   <!--[if IE]><p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p><![endif]-->
   <div class="container mb-5">
+    <?php echo "Hello World" ?>
     <div class="header">
       <ul class="nav justify-content-center">
         <li class="nav-item menu-button -aboutme animated fadeInDown"><a class="nav-link link text-center" href="#aboutme"><i class="fa fa-user hidden-md-up" aria-hidden="true"></i> <span class="hidden-sm-down">ABOUT</span> ME</a></li>
