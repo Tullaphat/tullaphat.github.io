@@ -83,6 +83,9 @@ function loadGallery() {
         gallery.innerHTML += `
           <div class="col-4 col-md-2 gallery-item">
             <img src="${IMAGE_BASE}/${p.filename}">
+            <span class="rarity-badge ${p.rarity}">
+        ${p.rarity}
+      </span>
           </div>`;
       });
     });
