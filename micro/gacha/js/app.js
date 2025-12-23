@@ -82,10 +82,10 @@ function loadGallery() {
       list.forEach(p => {
         gallery.innerHTML += `
           <div class="col-4 col-md-2 gallery-item">
-            <img src="${IMAGE_BASE}/${p.filename}">
-            <span class="rarity-badge ${p.rarity}">
-        ${p.rarity}
-      </span>
+            <div class="photo-card">
+              <img src="${IMAGE_BASE}/${p.filename}">
+              <span class="rarity-badge ${p.rarity}">${p.rarity}</span>
+            </div>
           </div>`;
       });
     });
