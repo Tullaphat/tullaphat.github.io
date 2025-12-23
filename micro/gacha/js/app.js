@@ -103,26 +103,22 @@ function loadAdminPhotos() {
       photoList.innerHTML = "";
       list.forEach(p => {
         photoList.innerHTML += `
-        <div class="list-group-item">
-          <div class="row align-items-center">
-            <div class="col-md-4">
-              <b>${p.filename}</b><br>
-              ${p.rarity}
-            </div>
-            <div class="col-md-3">
-              <input type="number" class="form-control"
+          <div class="col-6 col-md-3">
+            <div class="card">
+              <img src="${UPLOAD_BASE}/${p.filename}" class="card-img-top">
+              <div class="card-body text-center">
+                <div>${p.rarity}</div>
+                <div>Stock: ${p.stock}</div>
+                <input type="number" class="form-control"
                 value="${p.stock}"
                 onchange="updateStock(${p.id}, this.value)">
+                <button class="btn btn-sm btn-danger"
+                  onclick="deletePhoto(${p.id})">
+                  Delete
+                </button>
+              </div>
             </div>
-            <div class="col-md-3">
-              <button class="btn btn-danger btn-sm"
-                onclick="deletePhoto(${p.id})">
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
+          </div>`;
       });
     });
 }
