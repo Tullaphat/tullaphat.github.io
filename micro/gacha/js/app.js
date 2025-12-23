@@ -108,7 +108,7 @@ function loadAdminPhotos() {
               <img src="${IMAGE_BASE}/${p.filename}" class="card-img-top">
               <div class="card-body text-center">
                 <div>${p.rarity}</div>
-                <div>Stock: ${p.stock}</div>
+                <div>Stock</div>
                 <input type="number" class="form-control"
                 value="${p.stock}"
                 onchange="updateStock(${p.id}, this.value)">
