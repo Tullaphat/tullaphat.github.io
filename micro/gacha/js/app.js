@@ -95,3 +95,37 @@ document.getElementById("uploadForm")?.addEventListener("submit", e => {
     body: form
   }).then(() => alert("Uploaded"));
 });
+
+function loadAdminPhotos() {
+  fetch(API_BASE + "/admin/photos.php", { headers: auth() })
+    .then(r => r.json())
+    .then(list => {
+      photoList.innerHTML = "";
+      list.forEach(p => {
+        photoList.innerHTML += `
+          <div class="col-6 col-md-3">
+            <div class="card">
+              <img src="${UPLOAD_BASE}/${p.filename}" class="card-img-top">
+              <div class="card-body text-center">
+                <div>${p.rarity}</div>
+                <div>Stock: ${p.stock}</div>
+                <button class="btn btn-sm btn-danger"
+                  onclick="deletePhoto(${p.id})">
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>`;
+      });
+    });
+}
+
+function deletePhoto(id) {
+  if (!confirm("Delete this photo?")) return;
+
+  fetch(API_BASE + "/admin/delete_photo.php?id=" + id, {
+    method: "DELETE",
+    headers: auth()
+  })
+  .then(() => loadAdminPhotos());
+}
