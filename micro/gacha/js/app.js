@@ -80,7 +80,7 @@ function addCredit() {
     method: "POST",
     headers: auth(),
     body: new URLSearchParams({
-      user_id: adminUserId.value,
+      username: adminUserId.value,
       amount: adminAmount.value
     })
   }).then(() => alert("Credit added"));
