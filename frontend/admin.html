@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+  <h2>Admin Panel</h2>
+  <button onclick="logout()">Logout</button>
+</header>
+
+<!-- ADD CREDIT -->
+<section>
+  <h3>➕ Add Credit</h3>
+  <input id="userId" placeholder="User ID">
+  <input id="creditAmount" type="number" placeholder="Amount">
+  <button onclick="addCredit()">Add</button>
+</section>
+
+<!-- UPLOAD PHOTO -->
+<section>
+  <h3>📤 Upload Photo</h3>
+  <form id="uploadForm">
+    <input type="file" name="photo" required><br>
+    <select name="rarity">
+      <option>R</option>
+      <option>SR</option>
+      <option>SSR</option>
+    </select>
+    <input type="number" name="stock" placeholder="Stock" required>
+    <button type="submit">Upload</button>
+  </form>
+</section>
+
+<!-- PHOTO LIST -->
+<section>
+  <h3>🖼️ Photo List</h3>
+  <div id="photoList"></div>
+</section>
+
+<script>
+const API = "https://yourdomain.com/backend/api";
+
+function authHeader() {
+  return { Authorization: localStorage.token };
+}
+
+function logout() {
+  localStorage.clear();
+  location.href = 'index.html';
+}
+
+function addCredit() {
+  fetch(API + "/admin/add_credit.php", {
+    method: "POST",
+    headers: authHeader(),
+    body: new URLSearchParams({
+      user_id: userId.value,
+      amount: creditAmount.value
+    })
+  }).then(() => alert("Credit added"));
+}
+
+document.getElementById("uploadForm").onsubmit = e => {
+  e.preventDefault();
+  const form = new FormData(uploadForm);
+  fetch(API + "/admin/upload_photo.php", {
+    method: "POST",
+    headers: authHeader(),
+    body: form
+  }).then(() => {
+    uploadForm.reset();
+    loadPhotos();
+  });
+};
+
+function loadPhotos() {
+  fetch(API + "/admin/photos.php", { headers: authHeader() })
+  .then(r => r.json())
+  .then(list => {
+    photoList.innerHTML = '';
+    list.forEach(p => {
+      photoList.innerHTML += `
+        <div>
+          ${p.filename} (${p.rarity}) stock:${p.stock}
+          <button onclick="deletePhoto(${p.id})">❌</button>
+        </div>`;
+    });
+  });
+}
+
+function deletePhoto(id) {
+  fetch(API + "/admin/delete_photo.php?id=" + id, {
+    method: "DELETE",
+    headers: authHeader()
+  }).then(loadPhotos);
+}
+
+loadPhotos();
+</script>
+
+</body>
+</html>

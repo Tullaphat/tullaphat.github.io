@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>User Gacha</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+  <h2>User Gacha</h2>
+  <button onclick="logout()">Logout</button>
+</header>
+
+<section class="info">
+  <span id="credit"></span>
+  <span id="pity"></span>
+</section>
+
+<button class="roll-btn" onclick="rollGacha()">🎲 ROLL</button>
+
+<!-- Gacha Animation -->
+<div id="gachaOverlay" class="hidden">
+  <div id="gachaCircle"></div>
+  <img id="gachaResult">
+  <div id="rarityText"></div>
+</div>
+
+<h3>🎁 Gallery</h3>
+<div id="gallery" class="grid"></div>
+
+<script src="js/app.js"></script>
+<script>
+loadMe();
+loadGallery();
+</script>
+
+</body>
+</html>

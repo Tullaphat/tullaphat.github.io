@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Gacha Login</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="center">
+
+<h1>🎰 Gacha System</h1>
+
+<input id="username" placeholder="Username">
+<button onclick="login()">Login</button>
+
+<p id="error"></p>
+
+<script>
+const API = "https://yourdomain.com/backend/api";
+
+function login() {
+  fetch(API + "/login.php", {
+    method: "POST",
+    body: new URLSearchParams({
+      username: document.getElementById("username").value
+    })
+  })
+  .then(r => r.ok ? r.json() : Promise.reject())
+  .then(d => {
+    localStorage.token = d.token;
+    location.href = d.role === 'admin' ? 'admin.html' : 'user.html';
+  })
+  .catch(() => {
+    document.getElementById("error").innerText = "Invalid username";
+  });
+}
+</script>
+
+</body>
+</html>
