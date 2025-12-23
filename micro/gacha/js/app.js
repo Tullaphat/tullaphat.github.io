@@ -103,19 +103,26 @@ function loadAdminPhotos() {
       photoList.innerHTML = "";
       list.forEach(p => {
         photoList.innerHTML += `
-          <div class="col-6 col-md-3">
-            <div class="card">
-              <img src="${IMAGE_BASE}/${p.filename}" class="card-img-top">
-              <div class="card-body text-center">
-                <div>${p.rarity}</div>
-                <div>Stock: ${p.stock}</div>
-                <button class="btn btn-sm btn-danger"
-                  onclick="deletePhoto(${p.id})">
-                  Delete
-                </button>
-              </div>
+        <div class="list-group-item">
+          <div class="row align-items-center">
+            <div class="col-md-4">
+              <b>${p.filename}</b><br>
+              ${p.rarity}
             </div>
-          </div>`;
+            <div class="col-md-3">
+              <input type="number" class="form-control"
+                value="${p.stock}"
+                onchange="updateStock(${p.id}, this.value)">
+            </div>
+            <div class="col-md-3">
+              <button class="btn btn-danger btn-sm"
+                onclick="deletePhoto(${p.id})">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
       });
     });
 }
@@ -128,4 +135,15 @@ function deletePhoto(id) {
     headers: auth()
   })
   .then(() => loadAdminPhotos());
+}
+
+function updateStock(id, stock) {
+  fetch(API_BASE + "/admin/update_stock.php", {
+    method: "POST",
+    headers: auth(),
+    body: new URLSearchParams({
+      id: id,
+      stock: stock
+    })
+  });
 }
