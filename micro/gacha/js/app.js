@@ -1,4 +1,5 @@
 const API_BASE = "https://gacha.rankongpor.com/api";
+const IMAGE_BASE = "https://gacha.rankongpor.com/uploads";
 
 /* ---------- AUTH ---------- */
 function login() {
@@ -50,7 +51,8 @@ function rollGacha() {
   .then(r => r.json())
   .then(p => {
     resultBox.classList.remove("d-none");
-    resultImg.src = API_BASE + "/uploads/" + p.filename;
+    //resultImg.src = API_BASE + "/uploads/" + p.filename;
+    resultImg.src = IMAGE_BASE + "/" + p.filename;
     resultRarity.innerText = p.rarity;
     resultRarity.className = p.rarity;
     loadMe();
@@ -66,7 +68,7 @@ function loadGallery() {
       list.forEach(p => {
         gallery.innerHTML += `
           <div class="col-4 col-md-2 gallery-item">
-            <img src="${API_BASE}/uploads/${p.filename}">
+            <img src="${IMAGE_BASE}/${p.filename}">
           </div>`;
       });
     });
