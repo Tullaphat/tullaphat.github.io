@@ -1,4 +1,4 @@
-const API = "https://yourdomain.com/backend/api";
+const API = "http://gacha.rankongpor.com/api";
 
 function authHeader() {
   return { Authorization: localStorage.token };
