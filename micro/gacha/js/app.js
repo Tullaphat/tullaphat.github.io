@@ -43,7 +43,7 @@ function loadMe() {
     });
 }
 
-function rollGacha() {
+/*function rollGacha() {
   fetch(API_BASE + "/gacha_roll.php", {
     method: "POST",
     headers: auth()
@@ -58,7 +58,21 @@ function rollGacha() {
     loadMe();
     loadGallery();
   });
+}*/
+
+function rollGacha() {
+  fetch(API_BASE + "/gacha_roll.php", {
+    method: "POST",
+    headers: auth()
+  })
+  .then(r => r.json())
+  .then(p => {
+    showGachaAnimation(p);
+    loadMe();
+    loadGallery();
+  });
 }
+
 
 function loadGallery() {
   fetch(API_BASE + "/gallery.php", { headers: auth() })
@@ -142,4 +156,37 @@ function updateStock(id, stock) {
       stock: stock
     })
   });
+}
+
+function showGachaAnimation(p) {
+  const overlay = document.getElementById("gachaOverlay");
+  const img = document.getElementById("gachaImg");
+  const rarity = document.getElementById("gachaRarity");
+
+  overlay.classList.remove("d-none");
+
+  img.src = IMAGE_BASE + "/" + p.filename;
+  rarity.innerText = p.rarity;
+  rarity.className = p.rarity;
+
+  gsap.set(img, { scale: 0, rotation: -180, opacity: 0 });
+
+  gsap.to(img, {
+    scale: 1,
+    rotation: 0,
+    opacity: 1,
+    duration: 0.8,
+    ease: "back.out(1.7)"
+  });
+
+  if (p.rarity === "SSR") {
+    gsap.fromTo(img,
+      { boxShadow: "0 0 0px gold" },
+      { boxShadow: "0 0 40px gold", repeat: 5, yoyo: true }
+    );
+  }
+
+  overlay.onclick = () => {
+    overlay.classList.add("d-none");
+  };
 }
