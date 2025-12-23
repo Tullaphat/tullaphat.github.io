@@ -105,7 +105,7 @@ function loadAdminPhotos() {
         photoList.innerHTML += `
           <div class="col-6 col-md-3">
             <div class="card">
-              <img src="${UPLOAD_BASE}/${p.filename}" class="card-img-top">
+              <img src="${IMAGE_BASE}/${p.filename}" class="card-img-top">
               <div class="card-body text-center">
                 <div>${p.rarity}</div>
                 <div>Stock: ${p.stock}</div>
