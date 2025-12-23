@@ -1,83 +1,95 @@
-const API = "https://gacha.rankongpor.com/api";
+const API_BASE = "https://gacha.rankongpor.com/api";
 
-function authHeader() {
-  return { Authorization: localStorage.token };
-}
-
-function rollGacha() {
-  fetch(API+'/gacha_roll.php', {
-    method:'POST',
-    headers: authHeader()
-  })
-  .then(r=>r.json())
-  .then(p=>{
-    document.getElementById('result').innerHTML = `
-      <img src="${API}/uploads/${p.filename}">
-      <div class="rarity ${p.rarity}">${p.rarity}</div>
-    `;
-    loadGallery();
-  });
-}
-
-function loadGallery() {
-  fetch(API+'/gallery.php', { headers: authHeader() })
-  .then(r=>r.json())
-  .then(list=>{
-    gallery.innerHTML='';
-    list.forEach(p=>{
-      gallery.innerHTML+=`
-        <div class="card ${p.rarity}">
-          <img src="${API}/uploads/${p.filename}">
-          <span>${p.rarity}</span>
-        </div>`;
-    });
-  });
-}
-
-function rollGacha() {
-  const overlay = document.getElementById('gachaOverlay');
-  const img = document.getElementById('gachaResult');
-  const text = document.getElementById('rarityText');
-  const circle = document.getElementById('gachaCircle');
-
-  overlay.classList.remove('hidden');
-  img.className = '';
-  img.style.opacity = 0;
-  text.innerHTML = '';
-
-  fetch(API + '/gacha_roll.php', {
-    method: 'POST',
-    headers: { Authorization: localStorage.token }
+/* ---------- AUTH ---------- */
+function login() {
+  fetch(API_BASE + "/login.php", {
+    method: "POST",
+    body: new URLSearchParams({
+      username: document.getElementById("username").value
+    })
   })
   .then(r => r.json())
-  .then(p => {
-    setTimeout(() => {
-      circle.style.display = 'none';
-      img.src = API + '/uploads/' + p.filename;
-      img.classList.add('show');
-      img.classList.add(p.rarity);
-      text.innerHTML = p.rarity;
-      text.className = p.rarity;
-      loadGallery();
-    }, 1500);
-  });
-
-  overlay.onclick = () => {
-    overlay.classList.add('hidden');
-    circle.style.display = 'block';
-  };
-}
-
-function loadMe() {
-  fetch(API + '/me.php', { headers: authHeader() })
-  .then(r=>r.json())
-  .then(d=>{
-    credit.innerText = 'Credit: ' + d.credit;
-    pity.innerText = 'Pity: ' + d.pity + '/50';
+  .then(d => {
+    localStorage.token = d.token;
+    location.href = d.role === 'admin' ? 'admin.html' : 'user.html';
+  })
+  .catch(() => {
+    document.getElementById("error").innerText = "Login failed";
   });
 }
 
 function logout() {
   localStorage.clear();
-  location.href = 'index.html';
+  location.href = "index.html";
 }
+
+function auth() {
+  return { Authorization: localStorage.token };
+}
+
+/* ---------- USER ---------- */
+function initUserPage() {
+  loadMe();
+  loadGallery();
+}
+
+function loadMe() {
+  fetch(API_BASE + "/me.php", { headers: auth() })
+    .then(r => r.json())
+    .then(d => {
+      credit.innerText = d.credit;
+      pity.innerText = d.pity;
+    });
+}
+
+function rollGacha() {
+  fetch(API_BASE + "/gacha_roll.php", {
+    method: "POST",
+    headers: auth()
+  })
+  .then(r => r.json())
+  .then(p => {
+    resultBox.classList.remove("d-none");
+    resultImg.src = API_BASE + "/uploads/" + p.filename;
+    resultRarity.innerText = p.rarity;
+    resultRarity.className = p.rarity;
+    loadMe();
+    loadGallery();
+  });
+}
+
+function loadGallery() {
+  fetch(API_BASE + "/gallery.php", { headers: auth() })
+    .then(r => r.json())
+    .then(list => {
+      gallery.innerHTML = "";
+      list.forEach(p => {
+        gallery.innerHTML += `
+          <div class="col-4 col-md-2 gallery-item">
+            <img src="${API_BASE}/uploads/${p.filename}">
+          </div>`;
+      });
+    });
+}
+
+/* ---------- ADMIN ---------- */
+function addCredit() {
+  fetch(API_BASE + "/admin/add_credit.php", {
+    method: "POST",
+    headers: auth(),
+    body: new URLSearchParams({
+      user_id: adminUserId.value,
+      amount: adminAmount.value
+    })
+  }).then(() => alert("Credit added"));
+}
+
+document.getElementById("uploadForm")?.addEventListener("submit", e => {
+  e.preventDefault();
+  const form = new FormData(uploadForm);
+  fetch(API_BASE + "/admin/upload_photo.php", {
+    method: "POST",
+    headers: auth(),
+    body: form
+  }).then(() => alert("Uploaded"));
+});
