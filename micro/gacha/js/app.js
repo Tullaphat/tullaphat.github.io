@@ -78,18 +78,11 @@ function loadGallery() {
   fetch(API_BASE + "/gallery.php", { headers: auth() })
     .then(r => r.json())
     .then(list => {
-      gallery.innerHTML = "";
-      list.forEach(p => {
-        gallery.innerHTML += `
-          <div class="col-4 col-md-2 gallery-item">
-            <div class="photo-card">
-              <img src="${IMAGE_BASE}/${p.filename}">
-              <span class="rarity-badge ${p.rarity}">${p.rarity}</span>
-            </div>
-          </div>`;
-      });
+      renderClassic(list);
+      renderCollection(list);
     });
 }
+
 
 /* ---------- ADMIN ---------- */
 function addCredit() {
@@ -192,4 +185,45 @@ function showGachaAnimation(p) {
   overlay.onclick = () => {
     overlay.classList.add("d-none");
   };
+}
+
+function renderClassic(list) {
+  galleryClassic.innerHTML = "";
+
+  list.forEach(p => {
+    galleryClassic.innerHTML += `
+      <div class="col-4 col-md-2 gallery-item">
+        <img src="${IMAGE_BASE}/${p.filename}" class="img-fluid rounded">
+        <div class="rarity-badge ${p.rarity}">
+          ${p.rarity}
+        </div>
+      </div>
+    `;
+  });
+}
+
+function renderCollection(list) {
+  galleryCollection.innerHTML = "";
+
+  const map = {};
+
+  list.forEach(p => {
+    const key = p.filename + "|" + p.rarity;
+    if (!map[key]) {
+      map[key] = { ...p, count: 0 };
+    }
+    map[key].count++;
+  });
+
+  Object.values(map).forEach(p => {
+    galleryCollection.innerHTML += `
+      <div class="col-4 col-md-2 gallery-item">
+        <img src="${IMAGE_BASE}/${p.filename}" class="img-fluid rounded">
+        <div class="count-badge">x${p.count}</div>
+        <div class="rarity-badge ${p.rarity}">
+          ${p.rarity}
+        </div>
+      </div>
+    `;
+  });
 }
