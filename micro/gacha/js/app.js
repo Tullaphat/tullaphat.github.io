@@ -1,83 +1,229 @@
-const API = "https://gacha.rankongpor.com/api";
+const API_BASE = "https://gacha.rankongpor.com/api";
+const IMAGE_BASE = "https://gacha.rankongpor.com/uploads";
 
-function authHeader() {
-  return { Authorization: localStorage.token };
-}
-
-function rollGacha() {
-  fetch(API+'/gacha_roll.php', {
-    method:'POST',
-    headers: authHeader()
-  })
-  .then(r=>r.json())
-  .then(p=>{
-    document.getElementById('result').innerHTML = `
-      <img src="${API}/uploads/${p.filename}">
-      <div class="rarity ${p.rarity}">${p.rarity}</div>
-    `;
-    loadGallery();
-  });
-}
-
-function loadGallery() {
-  fetch(API+'/gallery.php', { headers: authHeader() })
-  .then(r=>r.json())
-  .then(list=>{
-    gallery.innerHTML='';
-    list.forEach(p=>{
-      gallery.innerHTML+=`
-        <div class="card ${p.rarity}">
-          <img src="${API}/uploads/${p.filename}">
-          <span>${p.rarity}</span>
-        </div>`;
-    });
-  });
-}
-
-function rollGacha() {
-  const overlay = document.getElementById('gachaOverlay');
-  const img = document.getElementById('gachaResult');
-  const text = document.getElementById('rarityText');
-  const circle = document.getElementById('gachaCircle');
-
-  overlay.classList.remove('hidden');
-  img.className = '';
-  img.style.opacity = 0;
-  text.innerHTML = '';
-
-  fetch(API + '/gacha_roll.php', {
-    method: 'POST',
-    headers: { Authorization: localStorage.token }
+/* ---------- AUTH ---------- */
+function login() {
+  fetch(API_BASE + "/login.php", {
+    method: "POST",
+    body: new URLSearchParams({
+      username: document.getElementById("username").value
+    })
   })
   .then(r => r.json())
-  .then(p => {
-    setTimeout(() => {
-      circle.style.display = 'none';
-      img.src = API + '/uploads/' + p.filename;
-      img.classList.add('show');
-      img.classList.add(p.rarity);
-      text.innerHTML = p.rarity;
-      text.className = p.rarity;
-      loadGallery();
-    }, 1500);
-  });
-
-  overlay.onclick = () => {
-    overlay.classList.add('hidden');
-    circle.style.display = 'block';
-  };
-}
-
-function loadMe() {
-  fetch(API + '/me.php', { headers: authHeader() })
-  .then(r=>r.json())
-  .then(d=>{
-    credit.innerText = 'Credit: ' + d.credit;
-    pity.innerText = 'Pity: ' + d.pity + '/50';
+  .then(d => {
+    localStorage.token = d.token;
+    location.href = d.role === 'admin' ? 'admin.html' : 'user.html';
+  })
+  .catch(() => {
+    document.getElementById("error").innerText = "Login failed";
   });
 }
 
 function logout() {
   localStorage.clear();
-  location.href = 'index.html';
+  location.href = "index.html";
+}
+
+function auth() {
+  return { Authorization: localStorage.token };
+}
+
+/* ---------- USER ---------- */
+function initUserPage() {
+  loadMe();
+  loadGallery();
+}
+
+function loadMe() {
+  fetch(API_BASE + "/me.php", { headers: auth() })
+    .then(r => r.json())
+    .then(d => {
+      credit.innerText = d.credit;
+      pity.innerText = d.pity;
+    });
+}
+
+/*function rollGacha() {
+  fetch(API_BASE + "/gacha_roll.php", {
+    method: "POST",
+    headers: auth()
+  })
+  .then(r => r.json())
+  .then(p => {
+    resultBox.classList.remove("d-none");
+    //resultImg.src = API_BASE + "/uploads/" + p.filename;
+    resultImg.src = IMAGE_BASE + "/" + p.filename;
+    resultRarity.innerText = p.rarity;
+    resultRarity.className = p.rarity;
+    loadMe();
+    loadGallery();
+  });
+}*/
+
+function rollGacha() {
+  fetch(API_BASE + "/gacha_roll.php", {
+    method: "POST",
+    headers: auth()
+  })
+  .then(r => r.json())
+  .then(p => {
+    showGachaAnimation(p);
+    loadMe();
+    loadGallery();
+  });
+}
+
+
+function loadGallery() {
+  fetch(API_BASE + "/gallery.php", { headers: auth() })
+    .then(r => r.json())
+    .then(list => {
+      renderClassic(list);
+      renderCollection(list);
+    });
+}
+
+
+/* ---------- ADMIN ---------- */
+function addCredit() {
+  fetch(API_BASE + "/admin/add_credit.php", {
+    method: "POST",
+    headers: auth(),
+    body: new URLSearchParams({
+      username: adminUserId.value,
+      amount: adminAmount.value
+    })
+  }).then(() => alert("Credit added"));
+}
+
+document.getElementById("uploadForm")?.addEventListener("submit", e => {
+  e.preventDefault();
+  const form = new FormData(uploadForm);
+  fetch(API_BASE + "/admin/upload_photo.php", {
+    method: "POST",
+    headers: auth(),
+    body: form
+  }).then(() => alert("Uploaded"));
+});
+
+function loadAdminPhotos() {
+  fetch(API_BASE + "/admin/photos.php", { headers: auth() })
+    .then(r => r.json())
+    .then(list => {
+      photoList.innerHTML = "";
+      list.forEach(p => {
+        photoList.innerHTML += `
+          <div class="col-6 col-md-3">
+            <div class="card">
+              <img src="${IMAGE_BASE}/${p.filename}" class="card-img-top">
+              <div class="card-body text-center">
+                <div>${p.rarity}</div>
+                <div>Stock</div>
+                <input type="number" class="form-control"
+                value="${p.stock}"
+                onchange="updateStock(${p.id}, this.value)">
+                <button class="btn btn-sm btn-danger"
+                  onclick="deletePhoto(${p.id})">
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>`;
+      });
+    });
+}
+
+function deletePhoto(id) {
+  if (!confirm("Delete this photo?")) return;
+
+  fetch(API_BASE + "/admin/delete_photo.php?id=" + id, {
+    method: "DELETE",
+    headers: auth()
+  })
+  .then(() => loadAdminPhotos());
+}
+
+function updateStock(id, stock) {
+  fetch(API_BASE + "/admin/update_stock.php", {
+    method: "POST",
+    headers: auth(),
+    body: new URLSearchParams({
+      id: id,
+      stock: stock
+    })
+  });
+}
+
+function showGachaAnimation(p) {
+  const overlay = document.getElementById("gachaOverlay");
+  const img = document.getElementById("gachaImg");
+  const rarity = document.getElementById("gachaRarity");
+
+  overlay.classList.remove("d-none");
+
+  img.src = IMAGE_BASE + "/" + p.filename;
+  rarity.innerText = p.rarity;
+  rarity.className = p.rarity;
+
+  gsap.set(img, { scale: 0, rotation: -180, opacity: 0 });
+
+  gsap.to(img, {
+    scale: 1,
+    rotation: 0,
+    opacity: 1,
+    duration: 0.8,
+    ease: "back.out(1.7)"
+  });
+
+  if (p.rarity === "SSR") {
+    gsap.fromTo(img,
+      { boxShadow: "0 0 0px gold" },
+      { boxShadow: "0 0 40px gold", repeat: 5, yoyo: true }
+    );
+  }
+
+  overlay.onclick = () => {
+    overlay.classList.add("d-none");
+  };
+}
+
+function renderClassic(list) {
+  galleryClassic.innerHTML = "";
+
+  list.forEach(p => {
+    galleryClassic.innerHTML += `
+      <div class="col-4 col-md-2 gallery-item">
+        <img src="${IMAGE_BASE}/${p.filename}" class="img-fluid rounded">
+        <div class="rarity-badge ${p.rarity}">
+          ${p.rarity}
+        </div>
+      </div>
+    `;
+  });
+}
+
+function renderCollection(list) {
+  galleryCollection.innerHTML = "";
+
+  const map = {};
+
+  list.forEach(p => {
+    const key = p.filename + "|" + p.rarity;
+    if (!map[key]) {
+      map[key] = { ...p, count: 0 };
+    }
+    map[key].count++;
+  });
+
+  Object.values(map).forEach(p => {
+    galleryCollection.innerHTML += `
+      <div class="col-4 col-md-2 gallery-item">
+        <img src="${IMAGE_BASE}/${p.filename}" class="img-fluid rounded">
+        <div class="count-badge">x${p.count}</div>
+        <div class="rarity-badge ${p.rarity}">
+          ${p.rarity}
+        </div>
+      </div>
+    `;
+  });
 }
