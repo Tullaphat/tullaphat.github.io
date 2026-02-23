@@ -23,6 +23,7 @@ createApp({
       confirmPin: '',
       activePinField: null,
       pinInput: '',
+      dragOverTarget: null,
       form: {
         name: '',
         year: '',
@@ -334,6 +335,50 @@ createApp({
         reader.onerror = () => reject(new Error('Failed to read file'));
         reader.readAsDataURL(file);
       });
+    },
+    onDragEnter(event, collection, rarity, slotIndex, personIndex = null) {
+      event.preventDefault();
+      event.stopPropagation();
+      const key = this.getDragTargetKey(collection.id, rarity, slotIndex, personIndex);
+      this.dragOverTarget = key;
+    },
+    onDragOver(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.dataTransfer.dropEffect = 'copy';
+    },
+    onDragLeave(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.target.classList && event.target.classList.contains('photo-placeholder')) {
+        this.dragOverTarget = null;
+      }
+    },
+    getDragTargetKey(collectionId, rarity, slotIndex, personIndex) {
+      return `${collectionId}_${rarity}_${slotIndex}_${personIndex || 'null'}`;
+    },
+    async onDrop(event, collection, rarity, slotIndex, personIndex = null) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.dragOverTarget = null;
+
+      const files = event.dataTransfer?.files;
+      if (!files || files.length === 0) return;
+
+      const file = files[0];
+      if (!file.type.startsWith('image/')) {
+        this.setMessage('Please drop an image file.');
+        return;
+      }
+
+      this.activePhotoTarget = {
+        collectionId: collection.id,
+        rarity,
+        slotIndex,
+        personIndex,
+      };
+
+      await this.onPhotoSelected({ target: { files: [file] } });
     },
     compressImage(dataUrl) {
       return new Promise((resolve, reject) => {
@@ -856,13 +901,13 @@ createApp({
 
             <div v-if="collection.type === 'single'" class="rarity-block">
               <div class="placeholder-row">
-                <div class="photo-placeholder rarity-r" v-for="index in rarityCount(collection.single.rVariety)" :key="'r_' + collection.id + '_' + index" @click="openPhotoOptions(collection, 'r', index - 1)">
+                <div class="photo-placeholder rarity-r" v-for="index in rarityCount(collection.single.rVariety)" :key="'r_' + collection.id + '_' + index" @click="openPhotoOptions(collection, 'r', index - 1)" @dragenter="onDragEnter($event, collection, 'r', index - 1)" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop($event, collection, 'r', index - 1)" :class="{ 'drag-over': dragOverTarget === getDragTargetKey(collection.id, 'r', index - 1) }">
                   <img v-if="getPhotoSrc(collection, 'r', index - 1)" :src="getPhotoSrc(collection, 'r', index - 1)" class="photo-image" alt="Collection photo" />
                   <div v-else class="photo-placeholder-empty">Tap to add</div>
                   <span v-if="getPhotoDuplicateCount(collection, 'r', index - 1) > 0" class="duplicate-badge">{{ getPhotoDuplicateCount(collection, 'r', index - 1) }}</span>
                   <span class="rarity-badge">R</span>
                 </div>
-                <div class="photo-placeholder rarity-ssr" v-for="index in rarityCount(collection.single.ssrVariety)" :key="'ssr_' + collection.id + '_' + index" @click="openPhotoOptions(collection, 'ssr', index - 1)">
+                <div class="photo-placeholder rarity-ssr" v-for="index in rarityCount(collection.single.ssrVariety)" :key="'ssr_' + collection.id + '_' + index" @click="openPhotoOptions(collection, 'ssr', index - 1)" @dragenter="onDragEnter($event, collection, 'ssr', index - 1)" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop($event, collection, 'ssr', index - 1)" :class="{ 'drag-over': dragOverTarget === getDragTargetKey(collection.id, 'ssr', index - 1) }">
                   <img v-if="getPhotoSrc(collection, 'ssr', index - 1)" :src="getPhotoSrc(collection, 'ssr', index - 1)" class="photo-image" alt="Collection photo" />
                   <div v-else class="photo-placeholder-empty">Tap to add</div>
                   <span v-if="getPhotoDuplicateCount(collection, 'ssr', index - 1) > 0" class="duplicate-badge">{{ getPhotoDuplicateCount(collection, 'ssr', index - 1) }}</span>
@@ -875,13 +920,13 @@ createApp({
               <div class="group-person" v-for="(person, personIndex) in collection.group" :key="collection.id + '_' + personIndex">
                 <div class="person-name">{{ person.name }}</div>
                 <div class="placeholder-row">
-                  <div class="photo-placeholder rarity-r" v-for="index in rarityCount(person.rVariety)" :key="'gr_' + collection.id + '_' + personIndex + '_' + index" @click="openPhotoOptions(collection, 'r', index - 1, personIndex)">
+                  <div class="photo-placeholder rarity-r" v-for="index in rarityCount(person.rVariety)" :key="'gr_' + collection.id + '_' + personIndex + '_' + index" @click="openPhotoOptions(collection, 'r', index - 1, personIndex)" @dragenter="onDragEnter($event, collection, 'r', index - 1, personIndex)" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop($event, collection, 'r', index - 1, personIndex)" :class="{ 'drag-over': dragOverTarget === getDragTargetKey(collection.id, 'r', index - 1, personIndex) }">
                     <img v-if="getPhotoSrc(collection, 'r', index - 1, personIndex)" :src="getPhotoSrc(collection, 'r', index - 1, personIndex)" class="photo-image" alt="Collection photo" />
                     <div v-else class="photo-placeholder-empty">Tap to add</div>
                     <span v-if="getPhotoDuplicateCount(collection, 'r', index - 1, personIndex) > 0" class="duplicate-badge">{{ getPhotoDuplicateCount(collection, 'r', index - 1, personIndex) }}</span>
                     <span class="rarity-badge">R</span>
                   </div>
-                  <div class="photo-placeholder rarity-ssr" v-for="index in rarityCount(person.ssrVariety)" :key="'gssr_' + collection.id + '_' + personIndex + '_' + index" @click="openPhotoOptions(collection, 'ssr', index - 1, personIndex)">
+                  <div class="photo-placeholder rarity-ssr" v-for="index in rarityCount(person.ssrVariety)" :key="'gssr_' + collection.id + '_' + personIndex + '_' + index" @click="openPhotoOptions(collection, 'ssr', index - 1, personIndex)" @dragenter="onDragEnter($event, collection, 'ssr', index - 1, personIndex)" @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop($event, collection, 'ssr', index - 1, personIndex)" :class="{ 'drag-over': dragOverTarget === getDragTargetKey(collection.id, 'ssr', index - 1, personIndex) }">
                     <img v-if="getPhotoSrc(collection, 'ssr', index - 1, personIndex)" :src="getPhotoSrc(collection, 'ssr', index - 1, personIndex)" class="photo-image" alt="Collection photo" />
                     <div v-else class="photo-placeholder-empty">Tap to add</div>
                     <span v-if="getPhotoDuplicateCount(collection, 'ssr', index - 1, personIndex) > 0" class="duplicate-badge">{{ getPhotoDuplicateCount(collection, 'ssr', index - 1, personIndex) }}</span>
@@ -1014,7 +1059,7 @@ createApp({
         <div class="modal-card photo-modal-card" @click.stop>
           <h2 v-if="photoModalMode === 'new'">Add Photo</h2>
           <h2 v-else>Manage Photo</h2>
-          <p class="subtitle" v-if="photoModalMode === 'new'">Choose how to add image for this slot.</p>
+          <p class="subtitle" v-if="photoModalMode === 'new'">Choose how to add image for this slot. You can also drag and drop directly on the placeholder.</p>
           <p class="subtitle" v-else>Edit duplicate count or delete this photo.</p>
 
           <div class="stack" v-if="photoModalMode === 'new'">
