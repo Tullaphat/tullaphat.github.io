@@ -3,6 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="description" content="Track and manage your photoset collections" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Photoset" />
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%232563eb' width='180' height='180'/><text x='90' y='110' font-size='80' fill='white' text-anchor='middle' font-weight='bold' font-family='system-ui'>📸</text></svg>" />
+    <link rel="manifest" href="./manifest.json" />
     <title>Photoset Tracker | Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <link rel="stylesheet" href="./assets/styles.css" />
@@ -13,5 +20,10 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="./assets/auth.js"></script>
     <script src="./assets/dashboard.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./service-worker.js').catch(err => console.log('SW registration failed:', err));
+      }
+    </script>
   </body>
 </html>
