@@ -27,6 +27,8 @@ createApp({
       uploadQueue: [],
       uploadProgress: {},
       isUploading: false,
+      activeUploads: 0,
+      maxConcurrentUploads: 3,
       form: {
         name: '',
         year: '',
@@ -449,14 +451,26 @@ createApp({
       }
     },
     async processUploadQueue() {
-      if (this.uploadQueue.length === 0) {
+      // Start parallel uploads up to maxConcurrentUploads
+      while (this.uploadQueue.length > 0 && this.activeUploads < this.maxConcurrentUploads) {
+        this.activeUploads++;
+        this.isUploading = true;
+        this.uploadSingleFile();
+      }
+
+      // If queue is empty and no active uploads, done
+      if (this.uploadQueue.length === 0 && this.activeUploads === 0) {
         this.isUploading = false;
         this.clearMessage();
+      }
+    },
+    async uploadSingleFile() {
+      const item = this.uploadQueue.shift();
+      if (!item) {
+        this.activeUploads--;
         return;
       }
 
-      this.isUploading = true;
-      const item = this.uploadQueue.shift();
       const { file, target } = item;
       const progressKey = `${target.collectionId}_${target.rarity}_${target.slotIndex}_${target.personIndex}`;
 
@@ -469,7 +483,7 @@ createApp({
           console.warn('HEIC conversion error:', conversionError);
         }
 
-        this.setMessage(`Uploading: ${file.name || 'image'} (${this.uploadQueue.length + 1} remaining)...`);
+        this.setMessage(`Uploading: ${file.name || 'image'} (${this.uploadQueue.length + this.activeUploads} remaining)...`);
         this.uploadProgress[progressKey] = 0;
 
         const imageData = await this.readFileAsDataUrl(processedFile);
@@ -482,7 +496,6 @@ createApp({
 
         if (!coll) {
           this.setMessage('Collection not found.');
-          this.processUploadQueue();
           return;
         }
 
@@ -520,57 +533,72 @@ createApp({
         this.uploadProgress[progressKey] = 100;
 
         if (!result.success) {
-          this.setMessage(`Failed to upload: ${result.message || 'Unknown error'}`);
+          console.warn(`Failed to upload: ${result.message || 'Unknown error'}`);
         } else {
           this.collections = result.collections || [];
-          this.setMessage(`'${file.name || 'Image'}' uploaded successfully!`, 'success');
+          this.setMessage(`✓ '${file.name || 'Image'}' uploaded!`, 'success');
         }
       } catch (error) {
         console.error('Upload error:', error);
-        this.setMessage(`Upload failed: ${error?.message || 'Unknown error'}`);
+        this.setMessage(`✗ Upload failed: ${error?.message || 'Unknown error'}`);
       } finally {
         delete this.uploadProgress[progressKey];
-        setTimeout(() => this.processUploadQueue(), 500);
+        this.activeUploads--;
+        // Continue with next file in queue
+        this.processUploadQueue();
       }
     },
     compressImage(dataUrl) {
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let { width, height } = img;
+          try {
+            const canvas = document.createElement('canvas');
+            let { width, height } = img;
 
-          // Resize to max 1920x1080 while maintaining aspect ratio
-          const maxWidth = 1920;
-          const maxHeight = 1080;
-          if (width > height) {
-            if (width > maxWidth) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
+            // Resize to max 1920x1080 while maintaining aspect ratio
+            const maxWidth = 1920;
+            const maxHeight = 1080;
+            if (width > height) {
+              if (width > maxWidth) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+              }
+            } else {
+              if (height > maxHeight) {
+                width = Math.round((width * maxHeight) / height);
+                height = maxHeight;
+              }
             }
-          } else {
-            if (height > maxHeight) {
-              width = Math.round((width * maxHeight) / height);
-              height = maxHeight;
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const targetSize = 1572864; // 1.5MB - safer limit with base64 overhead
+
+            // Try WebP first (30-35% smaller than JPEG)
+            let result = canvas.toDataURL('image/webp', 0.8);
+            
+            // If WebP too large or not supported, use optimized JPEG
+            if (result.length > targetSize || !result.includes('image/webp')) {
+              result = canvas.toDataURL('image/jpeg', 0.7);
+              
+              // Only compress if still too large
+              if (result.length > targetSize) {
+                let quality = 0.65;
+                while (result.length > targetSize && quality > 0.2) {
+                  quality -= 0.05; // Smaller steps for better quality at each step
+                  result = canvas.toDataURL('image/jpeg', quality);
+                }
+              }
             }
+
+            resolve(result);
+          } catch (error) {
+            reject(new Error('Image compression failed: ' + error.message));
           }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Compress with decreasing quality until below 2MB
-          let quality = 0.85;
-          let result = canvas.toDataURL('image/jpeg', quality);
-
-          while (result.length > 2621440 && quality > 0.1) {
-            // 2621440 bytes = 2.5 MB (accounting for base64 expansion)
-            quality -= 0.1;
-            result = canvas.toDataURL('image/jpeg', quality);
-          }
-
-          resolve(result);
         };
         img.onerror = () => reject(new Error('Failed to load image'));
         img.src = dataUrl;
