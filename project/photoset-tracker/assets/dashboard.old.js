@@ -35,11 +35,6 @@ createApp({
         group: [
           { name: 'A', rVariety: 0, ssrVariety: 0 },
         ],
-        groupTemplate: {
-          rVariety: 0,
-          ssrVariety: 0,
-          names: 'A, B, C',
-        },
       },
     };
   },
@@ -497,11 +492,6 @@ createApp({
         group: [
           { name: 'A', rVariety: 0, ssrVariety: 0 },
         ],
-        groupTemplate: {
-          rVariety: 0,
-          ssrVariety: 0,
-          names: 'A, B, C',
-        },
       };
     },
     addGroupPerson() {
@@ -547,27 +537,6 @@ createApp({
         return '';
       }
 
-      // For group type
-      // When creating (not editing), validate template
-      if (!this.editingCollectionId) {
-        const rVariety = this.normalizeNumber(this.form.groupTemplate.rVariety);
-        const ssrVariety = this.normalizeNumber(this.form.groupTemplate.ssrVariety);
-        
-        if (rVariety + ssrVariety === 0) {
-          return 'Add at least one variety for R or SSR.';
-        }
-        
-        const names = this.form.groupTemplate.names.trim();
-        if (!names) {
-          return 'Please enter at least one person name.';
-        }
-        
-        this.form.groupTemplate.rVariety = rVariety;
-        this.form.groupTemplate.ssrVariety = ssrVariety;
-        return '';
-      }
-
-      // When editing, validate each person
       for (let i = 0; i < this.form.group.length; i += 1) {
         const person = this.form.group[i];
         person.name = person.name.trim();
@@ -597,34 +566,13 @@ createApp({
       this.saving = true;
 
       try {
-        // If creating new group collection, convert template to group array
-        let groupData = this.form.group;
-        if (this.form.type === 'group' && !this.editingCollectionId) {
-          // Parse names and create group with template R/SSR values
-          const names = this.form.groupTemplate.names
-            .split(',')
-            .map(n => n.trim())
-            .filter(n => n.length > 0);
-          
-          if (names.length === 0) {
-            this.setMessage('Please enter at least one person name.');
-            return;
-          }
-          
-          groupData = names.map(name => ({
-            name,
-            rVariety: this.normalizeNumber(this.form.groupTemplate.rVariety),
-            ssrVariety: this.normalizeNumber(this.form.groupTemplate.ssrVariety),
-          }));
-        }
-        
         const payload = {
           name: this.form.name.trim(),
           year: this.form.year.toString().trim(),
           description: this.form.description.trim(),
           type: this.form.type,
           single: this.form.type === 'single' ? { ...this.form.single } : null,
-          group: this.form.type === 'group' ? groupData.map((person) => ({ ...person })) : [],
+          group: this.form.type === 'group' ? this.form.group.map((person) => ({ ...person })) : [],
         };
 
         const existingCollection = this.editingCollectionId
@@ -944,57 +892,29 @@ createApp({
 
             <div v-else class="builder-box">
               <label>People and Rarity Variety</label>
-              
-              <!-- Simple creation mode: just names and common R/SSR -->
-              <div v-if="!editingCollectionId">
-                <div class="form-group">
-                  <label>Names (comma-separated) *</label>
-                  <input 
-                    type="text" 
-                    v-model="form.groupTemplate.names" 
-                    placeholder="A, B, C, D" 
-                  />
-                  <small>Enter names separated by commas (e.g., A, B, C)</small>
+              <div class="group-builder" v-for="(person, index) in form.group" :key="index">
+                <div class="group-title">
+                  <strong>Person {{ index + 1 }}</strong>
+                  <button type="button" class="link-btn" @click="removeGroupPerson(index)" v-if="form.group.length > 1">Remove</button>
+                </div>
+
+                <div>
+                  <label>Name</label>
+                  <input type="text" v-model="person.name" placeholder="A" />
                 </div>
 
                 <div class="two-col">
                   <div>
-                    <label>R per person</label>
-                    <input type="number" min="0" v-model="form.groupTemplate.rVariety" />
+                    <label>R</label>
+                    <input type="number" min="0" v-model="person.rVariety" />
                   </div>
                   <div>
-                    <label>SSR per person</label>
-                    <input type="number" min="0" v-model="form.groupTemplate.ssrVariety" />
+                    <label>SSR</label>
+                    <input type="number" min="0" v-model="person.ssrVariety" />
                   </div>
                 </div>
               </div>
-
-              <!-- Detailed edit mode: individual person settings -->
-              <div v-else>
-                <div class="group-builder" v-for="(person, index) in form.group" :key="index">
-                  <div class="group-title">
-                    <strong>Person {{ index + 1 }}</strong>
-                    <button type="button" class="link-btn" @click="removeGroupPerson(index)" v-if="form.group.length > 1">Remove</button>
-                  </div>
-
-                  <div>
-                    <label>Name</label>
-                    <input type="text" v-model="person.name" placeholder="A" />
-                  </div>
-
-                  <div class="two-col">
-                    <div>
-                      <label>R</label>
-                      <input type="number" min="0" v-model="person.rVariety" />
-                    </div>
-                    <div>
-                      <label>SSR</label>
-                      <input type="number" min="0" v-model="person.ssrVariety" />
-                    </div>
-                  </div>
-                </div>
-                <button type="button" class="btn btn-secondary" @click="addGroupPerson">Add Person</button>
-              </div>
+              <button type="button" class="btn btn-secondary" @click="addGroupPerson">Add Person</button>
             </div>
           </div>
 
