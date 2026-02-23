@@ -45,7 +45,10 @@ async function remoteRequest(path, options = {}) {
 
 async function checkEmailExists(email) {
   if (USE_REMOTE_API) {
-    return remoteRequest(`/auth/check-email?email=${encodeURIComponent(email)}`);
+    return remoteRequest('/auth/check-email', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    });
   }
 
   const users = loadUsers();
