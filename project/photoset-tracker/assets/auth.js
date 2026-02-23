@@ -45,7 +45,7 @@ async function remoteRequest(path, options = {}) {
 
 async function checkEmailExists(email) {
   if (USE_REMOTE_API) {
-    return remoteRequest('/auth/check-email', {
+    return remoteRequest('/auth.php?action=check-email', {
       method: 'POST',
       body: JSON.stringify({ email })
     });
@@ -58,7 +58,7 @@ async function checkEmailExists(email) {
 
 async function registerUser(email, pin, displayName) {
   if (USE_REMOTE_API) {
-    return remoteRequest('/auth/register', {
+    return remoteRequest('/auth.php?action=register', {
       method: 'POST',
       body: JSON.stringify({ email, pin, displayName }),
     });
@@ -84,7 +84,7 @@ async function registerUser(email, pin, displayName) {
 
 async function verifyPin(email, pin) {
   if (USE_REMOTE_API) {
-    const result = await remoteRequest('/auth/login', {
+    const result = await remoteRequest('/auth.php?action=login', {
       method: 'POST',
       body: JSON.stringify({ email, pin }),
     });
@@ -130,7 +130,7 @@ function logout() {
 
 async function updateDisplayName(email, newDisplayName) {
   if (USE_REMOTE_API) {
-    return remoteRequest('/auth/update-display-name', {
+    return remoteRequest('/auth.php?action=update-display-name', {
       method: 'PUT',
       body: JSON.stringify({ email, displayName: newDisplayName }),
     });
@@ -157,7 +157,7 @@ async function updateDisplayName(email, newDisplayName) {
 
 async function updatePin(email, oldPin, newPin) {
   if (USE_REMOTE_API) {
-    return remoteRequest('/auth/update-pin', {
+    return remoteRequest('/auth.php?action=update-pin', {
       method: 'PUT',
       body: JSON.stringify({ email, oldPin, newPin }),
     });
@@ -201,7 +201,7 @@ function saveCollectionsMap(collectionsMap) {
 
 async function getCollections(email) {
   if (USE_REMOTE_API) {
-    return remoteRequest(`/items?email=${encodeURIComponent(email)}`, {
+    return remoteRequest(`/collections.php?email=${encodeURIComponent(email)}`, {
       method: 'GET',
       headers: { 'X-User-Email': email }
     });
@@ -214,7 +214,7 @@ async function getCollections(email) {
 
 async function createCollection(email, collection) {
   if (USE_REMOTE_API) {
-    return remoteRequest(`/items?email=${encodeURIComponent(email)}`, {
+    return remoteRequest(`/collections.php?email=${encodeURIComponent(email)}`, {
       method: 'POST',
       headers: { 'X-User-Email': email },
       body: JSON.stringify(collection),
@@ -243,7 +243,7 @@ async function createCollection(email, collection) {
 
 async function updateCollection(email, collectionId, collection) {
   if (USE_REMOTE_API) {
-    return remoteRequest(`/items/${encodeURIComponent(collectionId)}?email=${encodeURIComponent(email)}`, {
+    return remoteRequest(`/collections.php?id=${encodeURIComponent(collectionId)}&email=${encodeURIComponent(email)}`, {
       method: 'PUT',
       headers: { 'X-User-Email': email },
       body: JSON.stringify(collection),
@@ -278,7 +278,7 @@ async function updateCollection(email, collectionId, collection) {
 
 async function deleteCollection(email, collectionId) {
   if (USE_REMOTE_API) {
-    return remoteRequest(`/items/${encodeURIComponent(collectionId)}?email=${encodeURIComponent(email)}`, {
+    return remoteRequest(`/collections.php?id=${encodeURIComponent(collectionId)}&email=${encodeURIComponent(email)}`, {
       method: 'DELETE',
       headers: { 'X-User-Email': email },
     });
