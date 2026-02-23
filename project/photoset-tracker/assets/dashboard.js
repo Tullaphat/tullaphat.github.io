@@ -328,6 +328,30 @@ createApp({
         this.$refs.uploadInput.value = '';
       }
     },
+    async convertHeicToJpeg(file) {
+      if (!file.type.includes('heic') && !file.type.includes('heif')) {
+        return file;
+      }
+      try {
+        if (typeof heic2any === 'undefined') {
+          await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.js';
+            s.onload = () => resolve();
+            s.onerror = () => reject(new Error('Failed to load heic2any library'));
+            document.head.appendChild(s);
+          });
+        }
+        if (typeof heic2any !== 'undefined') {
+          const converted = await heic2any({ blob: file, toType: 'image/jpeg' });
+          return converted;
+        }
+      } catch (error) {
+        console.warn('HEIC conversion failed:', error);
+      }
+      this.setMessage('Please export HEIC photos as JPEG from Photos app and try again.');
+      throw new Error('HEIC format not supported - please export as JPEG');
+    },
     readFileAsDataUrl(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -404,7 +428,16 @@ createApp({
       this.clearMessage();
 
       try {
-        const imageData = await this.readFileAsDataUrl(file);
+        // Convert HEIC to JPEG if needed
+        let processedFile = file;
+        try {
+          processedFile = await this.convertHeicToJpeg(file);
+        } catch (conversionError) {
+          console.warn('HEIC conversion error:', conversionError);
+          // Continue with original file if conversion fails
+        }
+
+        const imageData = await this.readFileAsDataUrl(processedFile);
         const compressedImageData = await this.compressImage(imageData);
         const target = this.activePhotoTarget;
         const coll = this.collections.find((item) => item.id === target.collectionId);
@@ -554,7 +587,16 @@ createApp({
       this.clearMessage();
 
       try {
-        const imageData = await this.readFileAsDataUrl(file);
+        // Convert HEIC to JPEG if needed
+        let processedFile = file;
+        try {
+          processedFile = await this.convertHeicToJpeg(file);
+        } catch (conversionError) {
+          console.warn('HEIC conversion error:', conversionError);
+          // Continue with original file if conversion fails
+        }
+
+        const imageData = await this.readFileAsDataUrl(processedFile);
         const compressedImageData = await this.compressImage(imageData);
         const target = this.activePhotoTarget;
         const collection = this.collections.find((item) => item.id === target.collectionId);
