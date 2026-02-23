@@ -84,10 +84,21 @@ async function registerUser(email, pin, displayName) {
 
 async function verifyPin(email, pin) {
   if (USE_REMOTE_API) {
-    return remoteRequest('/auth/login', {
+    const result = await remoteRequest('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, pin }),
     });
+    
+    // Store session if login was successful
+    if (result.success && result.user) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ 
+        email: result.user.email, 
+        displayName: result.user.displayName, 
+        loginAt: Date.now() 
+      }));
+    }
+    
+    return result;
   }
 
   const users = loadUsers();
