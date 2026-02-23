@@ -34,11 +34,12 @@ createApp({
         },
         group: [
           { name: 'A', rVariety: 0, ssrVariety: 0 },
+          { name: 'B', rVariety: 0, ssrVariety: 0 },
+          { name: 'C', rVariety: 0, ssrVariety: 0 },
         ],
         groupTemplate: {
           rVariety: 0,
           ssrVariety: 0,
-          names: 'A, B, C',
         },
       },
     };
@@ -496,11 +497,12 @@ createApp({
         },
         group: [
           { name: 'A', rVariety: 0, ssrVariety: 0 },
+          { name: 'B', rVariety: 0, ssrVariety: 0 },
+          { name: 'C', rVariety: 0, ssrVariety: 0 },
         ],
         groupTemplate: {
           rVariety: 0,
           ssrVariety: 0,
-          names: 'A, B, C',
         },
       };
     },
@@ -548,7 +550,7 @@ createApp({
       }
 
       // For group type
-      // When creating (not editing), validate template
+      // When creating (not editing), validate template and at least one person
       if (!this.editingCollectionId) {
         const rVariety = this.normalizeNumber(this.form.groupTemplate.rVariety);
         const ssrVariety = this.normalizeNumber(this.form.groupTemplate.ssrVariety);
@@ -557,9 +559,16 @@ createApp({
           return 'Add at least one variety for R or SSR.';
         }
         
-        const names = this.form.groupTemplate.names.trim();
-        if (!names) {
-          return 'Please enter at least one person name.';
+        if (this.form.group.length === 0) {
+          return 'Add at least one person.';
+        }
+        
+        // Check each person has a name
+        for (let i = 0; i < this.form.group.length; i += 1) {
+          const person = this.form.group[i];
+          if (!person.name.trim()) {
+            return `Person ${i + 1} needs a name.`;
+          }
         }
         
         this.form.groupTemplate.rVariety = rVariety;
@@ -597,22 +606,12 @@ createApp({
       this.saving = true;
 
       try {
-        // If creating new group collection, convert template to group array
+        // If creating new group collection, apply template R/SSR to all persons
         let groupData = this.form.group;
         if (this.form.type === 'group' && !this.editingCollectionId) {
-          // Parse names and create group with template R/SSR values
-          const names = this.form.groupTemplate.names
-            .split(',')
-            .map(n => n.trim())
-            .filter(n => n.length > 0);
-          
-          if (names.length === 0) {
-            this.setMessage('Please enter at least one person name.');
-            return;
-          }
-          
-          groupData = names.map(name => ({
-            name,
+          // Apply template R/SSR values to all persons
+          groupData = this.form.group.map(person => ({
+            name: person.name.trim(),
             rVariety: this.normalizeNumber(this.form.groupTemplate.rVariety),
             ssrVariety: this.normalizeNumber(this.form.groupTemplate.ssrVariety),
           }));
@@ -945,19 +944,9 @@ createApp({
             <div v-else class="builder-box">
               <label>People and Rarity Variety</label>
               
-              <!-- Simple creation mode: just names and common R/SSR -->
+              <!-- Simple creation mode: separate name inputs with shared R/SSR -->
               <div v-if="!editingCollectionId">
-                <div class="form-group">
-                  <label>Names (comma-separated) *</label>
-                  <input 
-                    type="text" 
-                    v-model="form.groupTemplate.names" 
-                    placeholder="A, B, C, D" 
-                  />
-                  <small>Enter names separated by commas (e.g., A, B, C)</small>
-                </div>
-
-                <div class="two-col">
+                <div class="two-col" style="margin-bottom: 1rem;">
                   <div>
                     <label>R per person</label>
                     <input type="number" min="0" v-model="form.groupTemplate.rVariety" />
@@ -967,11 +956,25 @@ createApp({
                     <input type="number" min="0" v-model="form.groupTemplate.ssrVariety" />
                   </div>
                 </div>
+
+                <div class="group-builder" v-for="(person, index) in form.group" :key="index" style="margin-bottom: 1rem;">
+                  <div class="group-title">
+                    <strong>Person {{ index + 1 }}</strong>
+                    <button type="button" class="link-btn" @click="removeGroupPerson(index)" v-if="form.group.length > 1">Remove</button>
+                  </div>
+
+                  <div>
+                    <label>Name</label>
+                    <input type="text" v-model="person.name" placeholder="A" />
+                  </div>
+                </div>
+                
+                <button type="button" class="btn btn-secondary" @click="addGroupPerson">Add Person</button>
               </div>
 
               <!-- Detailed edit mode: individual person settings -->
               <div v-else>
-                <div class="group-builder" v-for="(person, index) in form.group" :key="index">
+                <div class="group-builder" v-for="(person, index) in form.group" :key="index" style="margin-bottom: 1rem;">
                   <div class="group-title">
                     <strong>Person {{ index + 1 }}</strong>
                     <button type="button" class="link-btn" @click="removeGroupPerson(index)" v-if="form.group.length > 1">Remove</button>
