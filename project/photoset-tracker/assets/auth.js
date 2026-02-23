@@ -202,6 +202,7 @@ function saveCollectionsMap(collectionsMap) {
 async function getCollections(email) {
   if (USE_REMOTE_API) {
     return remoteRequest('/collections', {
+      method: 'GET',
       headers: { 'X-User-Email': email }
     });
   }
