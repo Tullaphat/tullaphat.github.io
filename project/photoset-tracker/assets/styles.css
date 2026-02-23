@@ -287,6 +287,43 @@ textarea {
   border-left: 4px solid var(--success);
 }
 
+.upload-progress-container {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.upload-progress-bar {
+  position: relative;
+  height: 24px;
+  border-radius: 8px;
+  background: var(--bg-lighter);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-light), var(--primary-dark));
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  z-index: 1;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
 .footer-link {
   margin-top: 16px;
   text-align: center;

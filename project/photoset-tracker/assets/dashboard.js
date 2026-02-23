@@ -24,6 +24,9 @@ createApp({
       activePinField: null,
       pinInput: '',
       dragOverTarget: null,
+      uploadQueue: [],
+      uploadProgress: {},
+      isUploading: false,
       form: {
         name: '',
         year: '',
@@ -386,46 +389,76 @@ createApp({
       event.stopPropagation();
       this.dragOverTarget = null;
 
-      let file = null;
+      let files = [];
 
       // Try different data transfer methods (handles macOS Photo app, files, etc.)
       const dataTransfer = event.dataTransfer;
       
       // Method 1: Try files list (standard file drag)
       if (dataTransfer?.files && dataTransfer.files.length > 0) {
-        file = dataTransfer.files[0];
+        files = Array.from(dataTransfer.files);
       }
       // Method 2: Try items with getAsFile (newer, supports macOS Photo app)
       else if (dataTransfer?.items && dataTransfer.items.length > 0) {
         for (let item of dataTransfer.items) {
           if (item.kind === 'file') {
-            file = item.getAsFile();
-            if (file) break;
+            const file = item.getAsFile();
+            if (file) files.push(file);
           }
         }
       }
       
-      if (!file) {
-        this.setMessage('No image file detected.');
+      if (files.length === 0) {
+        this.setMessage('No image files detected.');
         return;
       }
 
-      // Accept common image types
+      // Accept common image types and queue valid files
       const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
-      if (file.type && !validImageTypes.includes(file.type)) {
-        this.setMessage(`Unsupported format: ${file.type || 'unknown'}`);
+      const validFiles = files.filter((file) => {
+        if (file.type && !validImageTypes.includes(file.type)) {
+          console.warn(`Skipping unsupported format: ${file.type}`);
+          return false;
+        }
+        return true;
+      });
+
+      if (validFiles.length === 0) {
+        this.setMessage('No supported image formats detected.');
         return;
       }
 
-      this.activePhotoTarget = {
-        collectionId: collection.id,
-        rarity,
-        slotIndex,
-        personIndex,
-      };
+      // Queue uploads for each file
+      validFiles.forEach((file, index) => {
+        this.uploadQueue.push({
+          file,
+          target: {
+            collectionId: collection.id,
+            rarity,
+            slotIndex: slotIndex + index,
+            personIndex,
+          },
+        });
+      });
 
-      this.photoSaving = true;
-      this.clearMessage();
+      this.setMessage(`${validFiles.length} file(s) queued for upload.`, 'success');
+
+      // Start processing queue if not already uploading
+      if (!this.isUploading) {
+        this.processUploadQueue();
+      }
+    },
+    async processUploadQueue() {
+      if (this.uploadQueue.length === 0) {
+        this.isUploading = false;
+        this.clearMessage();
+        return;
+      }
+
+      this.isUploading = true;
+      const item = this.uploadQueue.shift();
+      const { file, target } = item;
+      const progressKey = `${target.collectionId}_${target.rarity}_${target.slotIndex}_${target.personIndex}`;
 
       try {
         // Convert HEIC to JPEG if needed
@@ -434,16 +467,22 @@ createApp({
           processedFile = await this.convertHeicToJpeg(file);
         } catch (conversionError) {
           console.warn('HEIC conversion error:', conversionError);
-          // Continue with original file if conversion fails
         }
 
+        this.setMessage(`Uploading: ${file.name || 'image'} (${this.uploadQueue.length + 1} remaining)...`);
+        this.uploadProgress[progressKey] = 0;
+
         const imageData = await this.readFileAsDataUrl(processedFile);
+        this.uploadProgress[progressKey] = 33;
+
         const compressedImageData = await this.compressImage(imageData);
-        const target = this.activePhotoTarget;
+        this.uploadProgress[progressKey] = 66;
+
         const coll = this.collections.find((item) => item.id === target.collectionId);
 
         if (!coll) {
           this.setMessage('Collection not found.');
+          this.processUploadQueue();
           return;
         }
 
@@ -478,20 +517,20 @@ createApp({
         };
 
         const result = await window.AuthApi.updateCollection(this.session.email, coll.id, payload);
+        this.uploadProgress[progressKey] = 100;
 
         if (!result.success) {
-          this.setMessage(result.message || 'Failed to update photo.');
-          return;
+          this.setMessage(`Failed to upload: ${result.message || 'Unknown error'}`);
+        } else {
+          this.collections = result.collections || [];
+          this.setMessage(`'${file.name || 'Image'}' uploaded successfully!`, 'success');
         }
-
-        this.collections = result.collections || [];
-        this.setMessage('Photo updated.', 'success');
       } catch (error) {
-        console.error('Drag and drop upload error:', error);
-        this.setMessage('Failed to upload photo: ' + (error?.message || 'Unknown error'));
+        console.error('Upload error:', error);
+        this.setMessage(`Upload failed: ${error?.message || 'Unknown error'}`);
       } finally {
-        this.photoSaving = false;
-        this.activePhotoTarget = null;
+        delete this.uploadProgress[progressKey];
+        setTimeout(() => this.processUploadQueue(), 500);
       }
     },
     compressImage(dataUrl) {
@@ -572,9 +611,9 @@ createApp({
       return 0;
     },
     async onPhotoSelected(event) {
-      const file = event.target?.files?.[0];
+      const files = event.target?.files ? Array.from(event.target.files) : [];
 
-      if (!file) {
+      if (!files || files.length === 0) {
         return;
       }
 
@@ -583,78 +622,44 @@ createApp({
         return;
       }
 
-      this.photoSaving = true;
-      this.clearMessage();
-
-      try {
-        // Convert HEIC to JPEG if needed
-        let processedFile = file;
-        try {
-          processedFile = await this.convertHeicToJpeg(file);
-        } catch (conversionError) {
-          console.warn('HEIC conversion error:', conversionError);
-          // Continue with original file if conversion fails
+      // Accept common image types
+      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
+      const validFiles = files.filter((file) => {
+        if (file.type && !validImageTypes.includes(file.type)) {
+          console.warn(`Skipping unsupported format: ${file.type}`);
+          return false;
         }
+        return true;
+      });
 
-        const imageData = await this.readFileAsDataUrl(processedFile);
-        const compressedImageData = await this.compressImage(imageData);
-        const target = this.activePhotoTarget;
-        const collection = this.collections.find((item) => item.id === target.collectionId);
-
-        if (!collection) {
-          this.setMessage('Collection not found.');
-          return;
-        }
-
-        const nextPhotos = this.buildPhotosForCollectionShape(collection, collection.photos);
-
-        if (collection.type === 'single') {
-          if (target.rarity === 'r') {
-            nextPhotos.r[target.slotIndex] = { src: compressedImageData, count: 1 };
-          } else {
-            nextPhotos.ssr[target.slotIndex] = { src: compressedImageData, count: 1 };
-          }
-        } else {
-          const personPhotos = nextPhotos[target.personIndex] || { r: [], ssr: [] };
-
-          if (target.rarity === 'r') {
-            personPhotos.r[target.slotIndex] = { src: compressedImageData, count: 1 };
-          } else {
-            personPhotos.ssr[target.slotIndex] = { src: compressedImageData, count: 1 };
-          }
-
-          nextPhotos[target.personIndex] = personPhotos;
-        }
-
-        const payload = {
-          name: collection.name,
-          year: collection.year,
-          description: collection.description || '',
-          type: collection.type,
-          single: collection.type === 'single' ? { ...collection.single } : null,
-          group: collection.type === 'group' ? collection.group.map((person) => ({ ...person })) : [],
-          photos: nextPhotos,
-        };
-
-        const result = await window.AuthApi.updateCollection(this.session.email, collection.id, payload);
-
-        if (!result.success) {
-          this.setMessage(result.message || 'Failed to update photo.');
-          return;
-        }
-
-        this.collections = result.collections || [];
-        this.setMessage('Photo updated.', 'success');
-        this.photoSaving = false;
+      if (validFiles.length === 0) {
+        this.setMessage('No supported image formats selected.');
         this.clearPhotoInputs();
-        setTimeout(() => this.closePhotoOptions(), 500);
-      } catch (error) {
-        console.error('Photo upload error:', error);
-        this.setMessage('Failed to update photo: ' + (error?.message || 'Unknown error'));
-      } finally {
-        this.photoSaving = false;
-        this.clearPhotoInputs();
+        return;
       }
+
+      // Queue uploads for each file
+      const baseTarget = { ...this.activePhotoTarget };
+      validFiles.forEach((file, index) => {
+        this.uploadQueue.push({
+          file,
+          target: {
+            ...baseTarget,
+            slotIndex: baseTarget.slotIndex + index,
+          },
+        });
+      });
+
+      this.setMessage(`${validFiles.length} file(s) queued for upload.`, 'success');
+
+      // Start processing queue if not already uploading
+      if (!this.isUploading) {
+        this.processUploadQueue();
+      }
+
+      // Close modal after queueing
+      this.closePhotoOptions();
+      this.clearPhotoInputs();
     },
     resetForm() {
       this.form = {
@@ -1001,7 +1006,14 @@ createApp({
 
         <p v-if="message" :class="['message', messageType]">{{ message }}</p>
 
-        <div class="empty-state" v-if="collections.length === 0">
+        <div v-if="isUploading" class="upload-progress-container">
+          <div class="upload-progress-bar" v-for="(progress, key) in uploadProgress" :key="key">
+            <div class="progress-text">{{ Math.round(progress) }}%</div>
+            <div class="progress-fill" :style="{ width: progress + '%' }"></div>
+          </div>
+        </div>
+
+        <div class="empty-state" v-if="collections.length === 0">>
           No collections yet. Click <strong>New Collection</strong> to create one.
         </div>
 
@@ -1297,7 +1309,7 @@ createApp({
       </div>
 
       <input ref="cameraInput" type="file" accept="image/*" capture="environment" class="hidden-file" @change="onPhotoSelected" />
-      <input ref="uploadInput" type="file" accept="image/*" class="hidden-file" @change="onPhotoSelected" />
+      <input ref="uploadInput" type="file" accept="image/*" multiple class="hidden-file" @change="onPhotoSelected" />
     </div>
   `,
 }).mount('#app');
