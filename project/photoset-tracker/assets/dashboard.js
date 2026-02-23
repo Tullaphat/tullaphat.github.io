@@ -363,9 +363,17 @@ createApp({
       this.dragOverTarget = null;
 
       const files = event.dataTransfer?.files;
-      if (!files || files.length === 0) return;
+      if (!files || files.length === 0) {
+        this.setMessage('No files detected.');
+        return;
+      }
 
       const file = files[0];
+      if (!file || !file.type) {
+        this.setMessage('Invalid file.');
+        return;
+      }
+
       if (!file.type.startsWith('image/')) {
         this.setMessage('Please drop an image file.');
         return;
@@ -378,7 +386,66 @@ createApp({
         personIndex,
       };
 
-      await this.onPhotoSelected({ target: { files: [file] } });
+      this.photoSaving = true;
+      this.clearMessage();
+
+      try {
+        const imageData = await this.readFileAsDataUrl(file);
+        const compressedImageData = await this.compressImage(imageData);
+        const target = this.activePhotoTarget;
+        const coll = this.collections.find((item) => item.id === target.collectionId);
+
+        if (!coll) {
+          this.setMessage('Collection not found.');
+          return;
+        }
+
+        const nextPhotos = this.buildPhotosForCollectionShape(coll, coll.photos);
+
+        if (coll.type === 'single') {
+          if (target.rarity === 'r') {
+            nextPhotos.r[target.slotIndex] = { src: compressedImageData, count: 1 };
+          } else {
+            nextPhotos.ssr[target.slotIndex] = { src: compressedImageData, count: 1 };
+          }
+        } else {
+          const personPhotos = nextPhotos[target.personIndex] || { r: [], ssr: [] };
+
+          if (target.rarity === 'r') {
+            personPhotos.r[target.slotIndex] = { src: compressedImageData, count: 1 };
+          } else {
+            personPhotos.ssr[target.slotIndex] = { src: compressedImageData, count: 1 };
+          }
+
+          nextPhotos[target.personIndex] = personPhotos;
+        }
+
+        const payload = {
+          name: coll.name,
+          year: coll.year,
+          description: coll.description || '',
+          type: coll.type,
+          single: coll.type === 'single' ? { ...coll.single } : null,
+          group: coll.type === 'group' ? coll.group.map((person) => ({ ...person })) : [],
+          photos: nextPhotos,
+        };
+
+        const result = await window.AuthApi.updateCollection(this.session.email, coll.id, payload);
+
+        if (!result.success) {
+          this.setMessage(result.message || 'Failed to update photo.');
+          return;
+        }
+
+        this.collections = result.collections || [];
+        this.setMessage('Photo updated.', 'success');
+      } catch (error) {
+        console.error('Drag and drop upload error:', error);
+        this.setMessage('Failed to upload photo: ' + (error?.message || 'Unknown error'));
+      } finally {
+        this.photoSaving = false;
+        this.activePhotoTarget = null;
+      }
     },
     compressImage(dataUrl) {
       return new Promise((resolve, reject) => {
@@ -522,12 +589,15 @@ createApp({
 
         this.collections = result.collections || [];
         this.setMessage('Photo updated.', 'success');
-      } catch (_) {
-        this.setMessage('Failed to update photo.');
+        this.photoSaving = false;
+        this.clearPhotoInputs();
+        setTimeout(() => this.closePhotoOptions(), 500);
+      } catch (error) {
+        console.error('Photo upload error:', error);
+        this.setMessage('Failed to update photo: ' + (error?.message || 'Unknown error'));
       } finally {
         this.photoSaving = false;
         this.clearPhotoInputs();
-        this.closePhotoOptions();
       }
     },
     resetForm() {
