@@ -201,7 +201,7 @@ function saveCollectionsMap(collectionsMap) {
 
 async function getCollections(email) {
   if (USE_REMOTE_API) {
-    return remoteRequest(`/collections.php?email=${encodeURIComponent(email)}`, {
+    return remoteRequest(`/items.php?email=${encodeURIComponent(email)}`, {
       method: 'GET',
       headers: { 'X-User-Email': email }
     });
@@ -214,7 +214,7 @@ async function getCollections(email) {
 
 async function createCollection(email, collection) {
   if (USE_REMOTE_API) {
-    return remoteRequest(`/collections.php?email=${encodeURIComponent(email)}`, {
+    return remoteRequest(`/items.php?email=${encodeURIComponent(email)}`, {
       method: 'POST',
       headers: { 'X-User-Email': email },
       body: JSON.stringify(collection),
@@ -243,7 +243,7 @@ async function createCollection(email, collection) {
 
 async function updateCollection(email, collectionId, collection) {
   if (USE_REMOTE_API) {
-    return remoteRequest(`/collections.php?id=${encodeURIComponent(collectionId)}&email=${encodeURIComponent(email)}`, {
+    return remoteRequest(`/items.php?id=${encodeURIComponent(collectionId)}&email=${encodeURIComponent(email)}`, {
       method: 'PUT',
       headers: { 'X-User-Email': email },
       body: JSON.stringify(collection),
@@ -278,7 +278,7 @@ async function updateCollection(email, collectionId, collection) {
 
 async function deleteCollection(email, collectionId) {
   if (USE_REMOTE_API) {
-    return remoteRequest(`/collections.php?id=${encodeURIComponent(collectionId)}&email=${encodeURIComponent(email)}`, {
+    return remoteRequest(`/items.php?id=${encodeURIComponent(collectionId)}&email=${encodeURIComponent(email)}`, {
       method: 'DELETE',
       headers: { 'X-User-Email': email },
     });
