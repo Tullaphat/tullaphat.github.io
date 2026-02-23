@@ -201,7 +201,7 @@ function saveCollectionsMap(collectionsMap) {
 
 async function getCollections(email) {
   if (USE_REMOTE_API) {
-    return remoteRequest('/collections', {
+    return remoteRequest('/items', {
       method: 'GET',
       headers: { 'X-User-Email': email }
     });
@@ -214,7 +214,7 @@ async function getCollections(email) {
 
 async function createCollection(email, collection) {
   if (USE_REMOTE_API) {
-    return remoteRequest('/collections', {
+    return remoteRequest('/items', {
       method: 'POST',
       headers: { 'X-User-Email': email },
       body: JSON.stringify(collection),
@@ -243,7 +243,7 @@ async function createCollection(email, collection) {
 
 async function updateCollection(email, collectionId, collection) {
   if (USE_REMOTE_API) {
-    return remoteRequest(`/collections/${encodeURIComponent(collectionId)}`, {
+    return remoteRequest(`/items/${encodeURIComponent(collectionId)}`, {
       method: 'PUT',
       headers: { 'X-User-Email': email },
       body: JSON.stringify(collection),
@@ -278,7 +278,7 @@ async function updateCollection(email, collectionId, collection) {
 
 async function deleteCollection(email, collectionId) {
   if (USE_REMOTE_API) {
-    return remoteRequest(`/collections/${encodeURIComponent(collectionId)}`, {
+    return remoteRequest(`/items/${encodeURIComponent(collectionId)}`, {
       method: 'DELETE',
       headers: { 'X-User-Email': email },
     });
