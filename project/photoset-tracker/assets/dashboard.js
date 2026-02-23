@@ -362,20 +362,34 @@ createApp({
       event.stopPropagation();
       this.dragOverTarget = null;
 
-      const files = event.dataTransfer?.files;
-      if (!files || files.length === 0) {
-        this.setMessage('No files detected.');
+      let file = null;
+
+      // Try different data transfer methods (handles macOS Photo app, files, etc.)
+      const dataTransfer = event.dataTransfer;
+      
+      // Method 1: Try files list (standard file drag)
+      if (dataTransfer?.files && dataTransfer.files.length > 0) {
+        file = dataTransfer.files[0];
+      }
+      // Method 2: Try items with getAsFile (newer, supports macOS Photo app)
+      else if (dataTransfer?.items && dataTransfer.items.length > 0) {
+        for (let item of dataTransfer.items) {
+          if (item.kind === 'file') {
+            file = item.getAsFile();
+            if (file) break;
+          }
+        }
+      }
+      
+      if (!file) {
+        this.setMessage('No image file detected.');
         return;
       }
 
-      const file = files[0];
-      if (!file || !file.type) {
-        this.setMessage('Invalid file.');
-        return;
-      }
-
-      if (!file.type.startsWith('image/')) {
-        this.setMessage('Please drop an image file.');
+      // Accept common image types
+      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
+      if (file.type && !validImageTypes.includes(file.type)) {
+        this.setMessage(`Unsupported format: ${file.type || 'unknown'}`);
         return;
       }
 
