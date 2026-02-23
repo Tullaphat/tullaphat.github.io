@@ -3,7 +3,7 @@
 // const API_BASE = 'http://localhost/akibar-photoset-tracker/api';
 
 // For production deployment (Backend on hosting, Frontend on GitHub Pages):
-const API_BASE = 'https://tracker.rankongpor.com/api';
+const API_BASE = 'https://track.rankongpor.com/api';
 
 // Toggle between localStorage (false) and backend API (true)
 const USE_REMOTE_API = true;  // Set to true to use backend API
