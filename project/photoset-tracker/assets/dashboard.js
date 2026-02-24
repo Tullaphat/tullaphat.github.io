@@ -1002,7 +1002,7 @@ createApp({
       const shouldDelete = window.confirm(`Delete collection "${collection.name}"?`);
 
       if (!shouldDelete) {
-        return;
+        return false;
       }
 
       try {
@@ -1010,13 +1010,32 @@ createApp({
 
         if (!result.success) {
           this.setMessage(result.message || 'Failed to delete collection.');
-          return;
+          return false;
         }
 
         this.collections = result.collections || [];
         this.setMessage('Collection deleted.', 'success');
+        return true;
       } catch (_) {
         this.setMessage('Failed to delete collection.');
+        return false;
+      }
+    },
+    async deleteEditingCollection() {
+      if (!this.editingCollectionId) {
+        return;
+      }
+
+      const collection = this.collections.find((item) => item.id === this.editingCollectionId);
+      if (!collection) {
+        this.setMessage('Collection not found.');
+        return;
+      }
+
+      const deleted = await this.deleteCollection(collection);
+      if (deleted) {
+        this.showModal = false;
+        this.editingCollectionId = null;
       }
     },
     logout() {
@@ -1203,7 +1222,6 @@ createApp({
             <div v-if="expandedCollections[collection.id]" class="collection-content">
               <div class="collection-actions-bar">
                 <button type="button" class="link-btn" @click="startEdit(collection)">Edit</button>
-                <button type="button" class="link-btn link-btn-danger" @click="deleteCollection(collection)">Delete</button>
               </div>
 
               <p class="collection-desc" v-if="collection.description">{{ collection.description }}</p>
@@ -1356,6 +1374,15 @@ createApp({
           </div>
 
           <div class="modal-actions">
+            <button
+              v-if="editingCollectionId"
+              type="button"
+              class="btn btn-secondary"
+              @click="deleteEditingCollection"
+              :disabled="saving"
+            >
+              Delete Collection
+            </button>
             <button type="button" class="btn btn-secondary" @click="closeModal" :disabled="saving">Cancel</button>
             <button type="button" class="btn btn-primary" @click="submitCollection" :disabled="saving">
               {{ saving ? 'Saving...' : (editingCollectionId ? 'Save Changes' : 'Create Collection') }}
