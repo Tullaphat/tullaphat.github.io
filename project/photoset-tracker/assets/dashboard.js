@@ -267,6 +267,19 @@ createApp({
           return;
         }
 
+        // Get the current photo URL before deleting
+        const photoUrl = this.getPhotoSrc(collection, target.rarity, target.slotIndex, target.personIndex);
+        
+        // Delete the file from server (if it's a file URL)
+        if (photoUrl && !photoUrl.startsWith('data:')) {
+          try {
+            await this.deletePhotoFromServer(photoUrl);
+          } catch (deleteError) {
+            console.warn('Failed to delete file from server:', deleteError);
+            // Continue with database update even if file deletion fails
+          }
+        }
+
         const nextPhotos = this.buildPhotosForCollectionShape(collection, collection.photos);
 
         if (collection.type === 'single') {
@@ -312,6 +325,31 @@ createApp({
         this.setMessage('Failed to delete photo.');
       } finally {
         this.photoSaving = false;
+      }
+    },
+    async deletePhotoFromServer(photoUrl) {
+      const response = await fetch(`${window.AuthApi.baseURL}/delete-photo.php`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Email': this.session.email,
+        },
+        body: JSON.stringify({
+          photoUrl: this.normalizePhotoSrc(photoUrl),
+          email: this.session.email,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Delete failed');
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Delete failed');
       }
     },
     triggerCamera() {
@@ -486,11 +524,16 @@ createApp({
         this.setMessage(`Uploading: ${file.name || 'image'} (${this.uploadQueue.length + this.activeUploads} remaining)...`);
         this.uploadProgress[progressKey] = 0;
 
+        // Convert to blob for compression
         const imageData = await this.readFileAsDataUrl(processedFile);
-        this.uploadProgress[progressKey] = 33;
+        this.uploadProgress[progressKey] = 20;
 
-        const compressedImageData = await this.compressImage(imageData);
-        this.uploadProgress[progressKey] = 66;
+        const compressedBlob = await this.compressImage(imageData);
+        this.uploadProgress[progressKey] = 50;
+
+        // Upload compressed file to server
+        const photoUrl = await this.uploadPhotoToServer(compressedBlob, file.name);
+        this.uploadProgress[progressKey] = 80;
 
         const coll = this.collections.find((item) => item.id === target.collectionId);
 
@@ -503,17 +546,17 @@ createApp({
 
         if (coll.type === 'single') {
           if (target.rarity === 'r') {
-            nextPhotos.r[target.slotIndex] = { src: compressedImageData, count: 1 };
+            nextPhotos.r[target.slotIndex] = { src: photoUrl, count: 1 };
           } else {
-            nextPhotos.ssr[target.slotIndex] = { src: compressedImageData, count: 1 };
+            nextPhotos.ssr[target.slotIndex] = { src: photoUrl, count: 1 };
           }
         } else {
           const personPhotos = nextPhotos[target.personIndex] || { r: [], ssr: [] };
 
           if (target.rarity === 'r') {
-            personPhotos.r[target.slotIndex] = { src: compressedImageData, count: 1 };
+            personPhotos.r[target.slotIndex] = { src: photoUrl, count: 1 };
           } else {
-            personPhotos.ssr[target.slotIndex] = { src: compressedImageData, count: 1 };
+            personPhotos.ssr[target.slotIndex] = { src: photoUrl, count: 1 };
           }
 
           nextPhotos[target.personIndex] = personPhotos;
@@ -576,26 +619,32 @@ createApp({
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            const targetSize = 1572864; // 1.5MB - safer limit with base64 overhead
+            const targetSize = 1572864; // 1.5MB
 
-            // Try WebP first (30-35% smaller than JPEG)
-            let result = canvas.toDataURL('image/webp', 0.8);
-            
-            // If WebP too large or not supported, use optimized JPEG
-            if (result.length > targetSize || !result.includes('image/webp')) {
-              result = canvas.toDataURL('image/jpeg', 0.7);
-              
-              // Only compress if still too large
-              if (result.length > targetSize) {
-                let quality = 0.65;
-                while (result.length > targetSize && quality > 0.2) {
-                  quality -= 0.05; // Smaller steps for better quality at each step
-                  result = canvas.toDataURL('image/jpeg', quality);
-                }
+            // Try WebP first (30-35% smaller, better quality)
+            canvas.toBlob((blob) => {
+              if (blob && blob.size <= targetSize) {
+                resolve(blob);
+              } else {
+                // Fallback to JPEG with quality adjustment
+                let quality = 0.7;
+                const tryJpeg = (q) => {
+                  canvas.toBlob((jpegBlob) => {
+                    if (!jpegBlob) {
+                      reject(new Error('Failed to create JPEG blob'));
+                      return;
+                    }
+                    
+                    if (jpegBlob.size <= targetSize || q <= 0.2) {
+                      resolve(jpegBlob);
+                    } else {
+                      tryJpeg(q - 0.05);
+                    }
+                  }, 'image/jpeg', q);
+                };
+                tryJpeg(quality);
               }
-            }
-
-            resolve(result);
+            }, 'image/webp', 0.8);
           } catch (error) {
             reject(new Error('Image compression failed: ' + error.message));
           }
@@ -603,6 +652,33 @@ createApp({
         img.onerror = () => reject(new Error('Failed to load image'));
         img.src = dataUrl;
       });
+    },
+    async uploadPhotoToServer(blob, filename) {
+      const formData = new FormData();
+      formData.append('photo', blob, filename);
+      formData.append('email', this.session.email);
+
+      const response = await fetch(`${window.AuthApi.baseURL}/upload-photo.php`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'X-User-Email': this.session.email,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      return this.normalizePhotoSrc(result.photoData || result.filename || '');
     },
     resizePhotoArray(existingArray, nextCount) {
       const source = Array.isArray(existingArray) ? existingArray : [];
@@ -627,9 +703,69 @@ createApp({
     getPhotoSrc(collection, rarity, slotIndex, personIndex = null) {
       const data = this.getFullPhotoData(collection, rarity, slotIndex, personIndex);
       if (!data) return '';
-      if (typeof data === 'string') return data;
-      if (typeof data === 'object' && data.src) return data.src;
+      if (typeof data === 'string') return this.normalizePhotoSrc(data);
+      if (typeof data === 'object' && data.src) return this.normalizePhotoSrc(data.src);
       return '';
+    },
+    normalizePhotoSrc(rawValue) {
+      if (!rawValue || typeof rawValue !== 'string') {
+        return '';
+      }
+
+      const src = rawValue.trim();
+      if (!src) {
+        return '';
+      }
+
+      if (src.startsWith('data:')) {
+        return src;
+      }
+
+      const apiBase = (window.AuthApi.baseURL || '').replace(/\/$/, '');
+      const apiOrigin = new URL(`${apiBase}/`).origin;
+
+      const fromUploadsPath = (value) => {
+        const cleanPath = value.split('?')[0].split('#')[0];
+        const name = cleanPath.substring(cleanPath.lastIndexOf('/') + 1);
+        if (!name) {
+          return '';
+        }
+        return `${apiBase}/uploads/${name}`;
+      };
+
+      if (src.startsWith('http://') || src.startsWith('https://')) {
+        try {
+          const parsed = new URL(src);
+          if (parsed.pathname.includes('/api/uploads/')) {
+            return `${apiBase}/uploads/${parsed.pathname.split('/').pop()}`;
+          }
+          if (parsed.pathname.includes('/uploads/')) {
+            return `${apiBase}/uploads/${parsed.pathname.split('/').pop()}`;
+          }
+          return src;
+        } catch (_) {
+          return src;
+        }
+      }
+
+      if (src.startsWith('/api/uploads/')) {
+        return `${apiOrigin}${src}`;
+      }
+
+      if (src.startsWith('/uploads/')) {
+        return `${apiBase}${src}`;
+      }
+
+      if (src.startsWith('uploads/')) {
+        return `${apiBase}/${src}`;
+      }
+
+      if (src.includes('/')) {
+        const normalized = fromUploadsPath(src);
+        return normalized || src;
+      }
+
+      return `${apiBase}/uploads/${src}`;
     },
     getPhotoDuplicateCount(collection, rarity, slotIndex, personIndex = null) {
       const data = this.getFullPhotoData(collection, rarity, slotIndex, personIndex);
