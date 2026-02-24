@@ -187,6 +187,17 @@ textarea {
   border-color: var(--primary);
 }
 
+.btn-danger {
+  background: var(--danger);
+  color: #ffffff;
+  border: 2px solid var(--danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+  filter: brightness(0.95);
+  box-shadow: var(--shadow);
+}
+
 .stack {
   display: grid;
   gap: 14px;

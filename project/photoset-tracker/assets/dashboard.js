@@ -1377,7 +1377,7 @@ createApp({
             <button
               v-if="editingCollectionId"
               type="button"
-              class="btn btn-secondary"
+              class="btn btn-danger"
               @click="deleteEditingCollection"
               :disabled="saving"
             >
