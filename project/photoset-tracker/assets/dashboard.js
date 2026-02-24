@@ -331,7 +331,6 @@ createApp({
       const apiBase = this.getApiBaseURL();
       const response = await fetch(`${apiBase}/delete-photo.php`, {
         method: 'POST',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'X-User-Email': this.session.email,
@@ -662,7 +661,6 @@ createApp({
 
       const response = await fetch(`${apiBase}/upload-photo.php`, {
         method: 'POST',
-        credentials: 'include',
         headers: {
           'X-User-Email': this.session.email,
         },
