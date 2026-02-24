@@ -29,6 +29,8 @@ createApp({
       isUploading: false,
       activeUploads: 0,
       maxConcurrentUploads: 3,
+      updateQueue: [],
+      isProcessingUpdates: false,
       form: {
         name: '',
         year: '',
@@ -535,52 +537,9 @@ createApp({
         const photoUrl = await this.uploadPhotoToServer(compressedBlob, file.name);
         this.uploadProgress[progressKey] = 80;
 
-        const coll = this.collections.find((item) => item.id === target.collectionId);
-
-        if (!coll) {
-          this.setMessage('Collection not found.');
-          return;
-        }
-
-        const nextPhotos = this.buildPhotosForCollectionShape(coll, coll.photos);
-
-        if (coll.type === 'single') {
-          if (target.rarity === 'r') {
-            nextPhotos.r[target.slotIndex] = { src: photoUrl, count: 1 };
-          } else {
-            nextPhotos.ssr[target.slotIndex] = { src: photoUrl, count: 1 };
-          }
-        } else {
-          const personPhotos = nextPhotos[target.personIndex] || { r: [], ssr: [] };
-
-          if (target.rarity === 'r') {
-            personPhotos.r[target.slotIndex] = { src: photoUrl, count: 1 };
-          } else {
-            personPhotos.ssr[target.slotIndex] = { src: photoUrl, count: 1 };
-          }
-
-          nextPhotos[target.personIndex] = personPhotos;
-        }
-
-        const payload = {
-          name: coll.name,
-          year: coll.year,
-          description: coll.description || '',
-          type: coll.type,
-          single: coll.type === 'single' ? { ...coll.single } : null,
-          group: coll.type === 'group' ? coll.group.map((person) => ({ ...person })) : [],
-          photos: nextPhotos,
-        };
-
-        const result = await window.AuthApi.updateCollection(this.session.email, coll.id, payload);
+        await this.queuePhotoUpdate(target.collectionId, target, photoUrl);
         this.uploadProgress[progressKey] = 100;
-
-        if (!result.success) {
-          console.warn(`Failed to upload: ${result.message || 'Unknown error'}`);
-        } else {
-          this.collections = result.collections || [];
-          this.setMessage(`✓ '${file.name || 'Image'}' uploaded!`, 'success');
-        }
+        this.setMessage(`✓ '${file.name || 'Image'}' uploaded!`, 'success');
       } catch (error) {
         console.error('Upload error:', error);
         this.setMessage(`✗ Upload failed: ${error?.message || 'Unknown error'}`);
@@ -589,6 +548,78 @@ createApp({
         this.activeUploads--;
         // Continue with next file in queue
         this.processUploadQueue();
+      }
+    },
+    async queuePhotoUpdate(collectionId, target, photoUrl) {
+      return new Promise((resolve) => {
+        this.updateQueue.push({ collectionId, target, photoUrl, resolve });
+        this.processUpdateQueue();
+      });
+    },
+    async processUpdateQueue() {
+      if (this.isProcessingUpdates || this.updateQueue.length === 0) {
+        return;
+      }
+
+      this.isProcessingUpdates = true;
+
+      while (this.updateQueue.length > 0) {
+        const update = this.updateQueue.shift();
+        try {
+          await this.applyPhotoUpdate(update.collectionId, update.target, update.photoUrl);
+          update.resolve();
+        } catch (error) {
+          console.error('Photo update failed:', error);
+          update.resolve();
+        }
+      }
+
+      this.isProcessingUpdates = false;
+    },
+    async applyPhotoUpdate(collectionId, target, photoUrl) {
+      const coll = this.collections.find((item) => item.id === collectionId);
+
+      if (!coll) {
+        console.warn('Collection not found for photo update');
+        return;
+      }
+
+      const nextPhotos = this.buildPhotosForCollectionShape(coll, coll.photos);
+
+      if (coll.type === 'single') {
+        if (target.rarity === 'r') {
+          nextPhotos.r[target.slotIndex] = { src: photoUrl, count: 1 };
+        } else {
+          nextPhotos.ssr[target.slotIndex] = { src: photoUrl, count: 1 };
+        }
+      } else {
+        const personPhotos = nextPhotos[target.personIndex] || { r: [], ssr: [] };
+
+        if (target.rarity === 'r') {
+          personPhotos.r[target.slotIndex] = { src: photoUrl, count: 1 };
+        } else {
+          personPhotos.ssr[target.slotIndex] = { src: photoUrl, count: 1 };
+        }
+
+        nextPhotos[target.personIndex] = personPhotos;
+      }
+
+      const payload = {
+        name: coll.name,
+        year: coll.year,
+        description: coll.description || '',
+        type: coll.type,
+        single: coll.type === 'single' ? { ...coll.single } : null,
+        group: coll.type === 'group' ? coll.group.map((person) => ({ ...person })) : [],
+        photos: nextPhotos,
+      };
+
+      const result = await window.AuthApi.updateCollection(this.session.email, coll.id, payload);
+
+      if (result.success) {
+        this.collections = result.collections || [];
+      } else {
+        console.warn(`Failed to update collection: ${result.message || 'Unknown error'}`);
       }
     },
     compressImage(dataUrl) {
