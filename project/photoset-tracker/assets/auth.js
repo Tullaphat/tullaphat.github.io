@@ -304,6 +304,7 @@ async function deleteCollection(email, collectionId) {
 }
 
 window.AuthApi = {
+  baseURL: API_BASE,
   checkEmailExists,
   registerUser,
   verifyPin,

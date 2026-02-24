@@ -1,4 +1,4 @@
-const CACHE_NAME = 'photoset-tracker-v1';
+const CACHE_NAME = 'photoset-tracker-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

@@ -328,7 +328,8 @@ createApp({
       }
     },
     async deletePhotoFromServer(photoUrl) {
-      const response = await fetch(`${window.AuthApi.baseURL}/delete-photo.php`, {
+      const apiBase = this.getApiBaseURL();
+      const response = await fetch(`${apiBase}/delete-photo.php`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -654,11 +655,12 @@ createApp({
       });
     },
     async uploadPhotoToServer(blob, filename) {
+      const apiBase = this.getApiBaseURL();
       const formData = new FormData();
       formData.append('photo', blob, filename);
       formData.append('email', this.session.email);
 
-      const response = await fetch(`${window.AuthApi.baseURL}/upload-photo.php`, {
+      const response = await fetch(`${apiBase}/upload-photo.php`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -707,6 +709,13 @@ createApp({
       if (typeof data === 'object' && data.src) return this.normalizePhotoSrc(data.src);
       return '';
     },
+    getApiBaseURL() {
+      const authBase = window?.AuthApi?.baseURL;
+      if (typeof authBase === 'string' && authBase.trim()) {
+        return authBase.replace(/\/$/, '');
+      }
+      return 'https://track.rankongpor.com/api';
+    },
     normalizePhotoSrc(rawValue) {
       if (!rawValue || typeof rawValue !== 'string') {
         return '';
@@ -721,7 +730,7 @@ createApp({
         return src;
       }
 
-      const apiBase = (window.AuthApi.baseURL || '').replace(/\/$/, '');
+      const apiBase = this.getApiBaseURL();
       const apiOrigin = new URL(`${apiBase}/`).origin;
 
       const fromUploadsPath = (value) => {
