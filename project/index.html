@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Index</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f6f8fb;
+      color: #1f2937;
+      margin: 0;
+      padding: 24px;
+    }
+
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .hint {
+      margin: 0 0 20px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .card:hover {
+      border-color: #93c5fd;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08);
+    }
+
+    .name {
+        color: #2563eb;
+      font-weight: 600;
+    }
+
+    .path {
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .desc {
+      color: #4b5563;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .empty {
+      color: #6b7280;
+      background: #fff;
+      border: 1px dashed #d1d5db;
+      border-radius: 12px;
+      padding: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Project Links</h1>
+    <p class="hint">Edit <code>projects.json</code> to add/remove subfolder links.</p>
+    <div id="list"></div>
+  </div>
+
+  <script>
+    fetch('./projects.json')
+      .then(r => {
+        if (!r.ok) throw new Error('Cannot load projects.json');
+        return r.json();
+      })
+      .then(items => {
+        const list = document.getElementById('list');
+
+        if (!Array.isArray(items) || items.length === 0) {
+          list.innerHTML = '<div class="empty">No projects yet. Add items in projects.json</div>';
+          return;
+        }
+
+        list.innerHTML = items.map(item => {
+          const name = item.name || item.path;
+          const description = item.description || '';
+          const path = String(item.path || '').replace(/^\/+|\/+$/g, '');
+          const href = path ? `./${path}/` : '#';
+
+          return `
+            <a class="card" href="${href}">
+              <div class="name">${name}</div>
+              ${description ? `<div class="desc">${description}</div>` : ''}
+            </a>
+          `;
+        }).join('');
+      })
+      .catch(err => {
+        document.getElementById('list').innerHTML = `<div class="empty">${err.message}</div>`;
+      });
+  </script>
+</body>
+</html>
