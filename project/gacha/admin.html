@@ -35,7 +35,10 @@
           <option>SSR</option>
         </select>
         <input type="number" name="stock" class="form-control mb-2" placeholder="Stock">
-        <button class="btn btn-primary">Upload</button>
+        <button id="uploadBtn" class="btn btn-primary" type="submit">Upload</button>
+        <div id="uploadProgressWrap" class="progress mt-2 d-none" role="progressbar" aria-label="Upload progress" aria-valuemin="0" aria-valuemax="100">
+          <div id="uploadProgressBar" class="progress-bar" style="width: 0%">0%</div>
+        </div>
       </form>
     </div>
   </div>

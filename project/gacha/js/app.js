@@ -191,12 +191,52 @@ function createUser() {
 
 document.getElementById("uploadForm")?.addEventListener("submit", e => {
   e.preventDefault();
+
+  const uploadBtn = document.getElementById("uploadBtn");
+  const progressWrap = document.getElementById("uploadProgressWrap");
+  const progressBar = document.getElementById("uploadProgressBar");
+  const originalBtnText = uploadBtn.innerText;
+
+  uploadBtn.disabled = true;
+  uploadBtn.innerText = "Uploading...";
+  progressWrap.classList.remove("d-none");
+  progressBar.style.width = "0%";
+  progressBar.innerText = "0%";
+
   const form = new FormData(uploadForm);
-  fetch(API_BASE + "/admin/upload_photo.php", {
-    method: "POST",
-    headers: auth(),
-    body: form
-  }).then(() => alert("Uploaded"));
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", API_BASE + "/admin/upload_photo.php", true);
+  xhr.setRequestHeader("Authorization", localStorage.token || "");
+
+  xhr.upload.addEventListener("progress", event => {
+    if (!event.lengthComputable) return;
+    const percent = Math.round((event.loaded / event.total) * 100);
+    progressBar.style.width = percent + "%";
+    progressBar.innerText = percent + "%";
+  });
+
+  xhr.addEventListener("load", () => {
+    if (xhr.status >= 200 && xhr.status < 300) {
+      progressBar.style.width = "100%";
+      progressBar.innerText = "100%";
+      setTimeout(() => {
+        location.reload();
+      }, 300);
+      return;
+    }
+
+    alert("Upload failed");
+    uploadBtn.disabled = false;
+    uploadBtn.innerText = originalBtnText;
+  });
+
+  xhr.addEventListener("error", () => {
+    alert("Upload failed");
+    uploadBtn.disabled = false;
+    uploadBtn.innerText = originalBtnText;
+  });
+
+  xhr.send(form);
 });
 
 function loadAdminPhotos() {
