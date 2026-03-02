@@ -1,5 +1,5 @@
-const API_BASE = "https://gacha.rankongpor.com/api";
-const IMAGE_BASE = "https://gacha.rankongpor.com/uploads";
+const API_BASE = "https://playground.rankongpor.com/api/gacha";
+const IMAGE_BASE = "https://playground.rankongpor.com/api/gacha/uploads";
 
 /* ---------- AUTH ---------- */
 function login() {
