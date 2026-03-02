@@ -85,7 +85,23 @@ function loadGallery() {
 
 
 /* ---------- ADMIN ---------- */
+function loadAdminUsers() {
+  fetch(API_BASE + "/admin/users.php", { headers: auth() })
+    .then(r => r.json())
+    .then(list => {
+      adminUserId.innerHTML = '<option value="">Select user</option>';
+      list.forEach(u => {
+        adminUserId.innerHTML += `<option value="${u.username}">${u.username}</option>`;
+      });
+    });
+}
+
 function addCredit() {
+  if (!adminUserId.value) {
+    alert("Please select user");
+    return;
+  }
+
   fetch(API_BASE + "/admin/add_credit.php", {
     method: "POST",
     headers: auth(),
@@ -93,7 +109,84 @@ function addCredit() {
       username: adminUserId.value,
       amount: adminAmount.value
     })
-  }).then(() => alert("Credit added"));
+  }).then(() => {
+    alert("Credit added");
+    adminAmount.value = "";
+    bootstrap.Modal.getOrCreateInstance(document.getElementById("addCreditModal")).hide();
+  });
+}
+
+function checkUsernameAvailability() {
+  const username = newUsername.value.trim();
+
+  createUserBtn.disabled = true;
+  createUserStatus.className = "text-muted";
+
+  if (!username) {
+    createUserStatus.innerText = "Enter username";
+    return;
+  }
+
+  fetch(API_BASE + "/admin/check_username.php?username=" + encodeURIComponent(username), {
+    headers: auth()
+  })
+    .then(r => r.json())
+    .then(d => {
+      if (d.available) {
+        createUserStatus.innerText = "Username available";
+        createUserStatus.className = "text-success";
+        createUserBtn.disabled = false;
+      } else {
+        createUserStatus.innerText = "Username already exists";
+        createUserStatus.className = "text-danger";
+        createUserBtn.disabled = true;
+      }
+    })
+    .catch(() => {
+      createUserStatus.innerText = "Cannot check username";
+      createUserStatus.className = "text-danger";
+      createUserBtn.disabled = true;
+    });
+}
+
+function createUser() {
+  const username = newUsername.value.trim();
+  const role = newUserRole.value;
+
+  if (!username) {
+    alert("Please enter username");
+    return;
+  }
+
+  if (createUserBtn.disabled) {
+    return;
+  }
+
+  fetch(API_BASE + "/admin/create_user.php", {
+    method: "POST",
+    headers: auth(),
+    body: new URLSearchParams({
+      username: username,
+      role: role
+    })
+  })
+    .then(r => {
+      if (!r.ok) throw new Error("create failed");
+      return r.json();
+    })
+    .then(() => {
+      alert("Account created");
+      newUsername.value = "";
+      newUserRole.value = "user";
+      createUserBtn.disabled = true;
+      createUserStatus.innerText = "";
+      loadAdminUsers();
+      bootstrap.Modal.getOrCreateInstance(document.getElementById("createUserModal")).hide();
+    })
+    .catch(() => {
+      alert("Create account failed");
+      checkUsernameAvailability();
+    });
 }
 
 document.getElementById("uploadForm")?.addEventListener("submit", e => {
