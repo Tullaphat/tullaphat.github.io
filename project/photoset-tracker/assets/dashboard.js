@@ -743,7 +743,7 @@ createApp({
       if (typeof authBase === 'string' && authBase.trim()) {
         return authBase.replace(/\/$/, '');
       }
-      return 'https://track.rankongpor.com/api';
+      return 'https://playground.rankongpor.com/api/photoset-tracker';
     },
     normalizePhotoSrc(rawValue) {
       if (!rawValue || typeof rawValue !== 'string') {
