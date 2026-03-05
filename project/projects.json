@@ -13,5 +13,10 @@
     "name": "Untitled-1",
     "path": "untitled-1",
     "description": "โปรเจคเกมสมัยมหาลัย พัฒนาด้วย Unity และ Construct 2"
+  },
+  {
+    "name": "Social App",
+    "path": "social-app",
+    "description": "โซเชียลมีเดียสำหรับแชร์ภาพและโพสต์ข้อความ พัฒนาด้วย PHP, MySQL, HTML, CSS และ JavaScript"
   }
 ]
