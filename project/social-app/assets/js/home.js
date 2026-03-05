@@ -1,15 +1,82 @@
-function loadViewer() {
+const sharedUtils = window.SocialAppUtils || {};
+
+function fallbackLoadViewer() {
   try {
     const raw = window.localStorage.getItem("socialAppCurrentUser");
-    if (!raw) {
-      return null;
-    }
-
-    return JSON.parse(raw);
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 }
+
+function fallbackGetApiBaseUrl() {
+  const config = window.APP_CONFIG || {};
+  const modeFromQuery = new URLSearchParams(window.location.search).get("mode");
+  const modeFromStorage = window.localStorage.getItem("socialAppMode");
+  const mode = modeFromQuery || modeFromStorage || config.mode || "production";
+  const normalizedMode = mode === "local" ? "local" : "production";
+  const apiBase = {
+    local: "http://localhost/social-app/api",
+    production: "https://playground.rankongpor.com/social-app/api",
+    ...(config.apiBase || {}),
+  };
+
+  return apiBase[normalizedMode];
+}
+
+const loadViewer = sharedUtils.loadViewer || fallbackLoadViewer;
+const getApiBaseUrl = sharedUtils.getApiBaseUrl || fallbackGetApiBaseUrl;
+const getViewerUserId =
+  sharedUtils.getViewerUserId ||
+  (() => {
+    const viewer = loadViewer() || {};
+    return Number(viewer.id || 0);
+  });
+const resolveProfileImageUrl =
+  sharedUtils.resolveProfileImageUrl ||
+  ((profileImageUrl, profileImageFilename) => {
+    if (profileImageFilename) {
+      return `${getApiBaseUrl()}/uploads/profile/${encodeURIComponent(profileImageFilename)}`;
+    }
+
+    return profileImageUrl || "";
+  });
+const profilePageUrl =
+  sharedUtils.profilePageUrl ||
+  ((username, userId) => {
+    const normalizedUsername = String(username || "").trim().toLowerCase();
+    if (normalizedUsername) {
+      return `profile.html?username=${encodeURIComponent(normalizedUsername)}`;
+    }
+
+    return `profile.html?username=${encodeURIComponent(`user${Number(userId || 0)}`)}`;
+  });
+const homePostJson =
+  sharedUtils.postJson ||
+  (async (endpoint, payload) => {
+    const response = await fetch(`${getApiBaseUrl()}/${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+
+    if (!response.ok) {
+      const error = new Error(data?.message || "Request failed");
+      error.status = response.status;
+      throw error;
+    }
+
+    return data;
+  });
 
 function hasAuthenticatedViewer() {
   const viewer = loadViewer();
@@ -30,37 +97,6 @@ function enforceAuthGuard() {
 
   window.location.replace("index.html");
   return false;
-}
-
-function getApiBaseUrl() {
-  const config = window.APP_CONFIG || {};
-  const modeFromQuery = new URLSearchParams(window.location.search).get("mode");
-  const modeFromStorage = window.localStorage.getItem("socialAppMode");
-  const mode = modeFromQuery || modeFromStorage || config.mode || "production";
-  const normalizedMode = mode === "local" ? "local" : "production";
-  const apiBase = {
-    local: "http://localhost/social-app/api",
-    production: "https://playground.rankongpor.com/social-app/api",
-    ...(config.apiBase || {}),
-  };
-
-  return apiBase[normalizedMode];
-}
-
-function getProfileUploadBasePath() {
-  return `${getApiBaseUrl()}/uploads/profile`;
-}
-
-function resolveProfileImageUrl(profileImageUrl, profileImageFilename) {
-  if (profileImageFilename) {
-    return `${getProfileUploadBasePath()}/${encodeURIComponent(profileImageFilename)}`;
-  }
-
-  if (profileImageUrl) {
-    return profileImageUrl;
-  }
-
-  return "";
 }
 
 function escapeHtml(value) {
@@ -99,20 +135,6 @@ function formatRelativeTime(rawDate) {
   }
 
   return createdAt.toLocaleDateString();
-}
-
-function getViewerUserId() {
-  const viewer = loadViewer() || {};
-  return Number(viewer.id || 0);
-}
-
-function profilePageUrl(username, userId) {
-  const normalizedUsername = String(username || "").trim().toLowerCase();
-  if (normalizedUsername) {
-    return `profile.html?username=${encodeURIComponent(normalizedUsername)}`;
-  }
-
-  return `profile.html?username=${encodeURIComponent(`user${Number(userId || 0)}`)}`;
 }
 
 function getReactionValue(post, key) {
@@ -216,32 +238,6 @@ function buildPostCard(post) {
   }
 
   return card;
-}
-
-async function postJson(endpoint, payload) {
-  const response = await fetch(`${getApiBaseUrl()}/${endpoint}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  let data = null;
-
-  try {
-    data = await response.json();
-  } catch {
-    data = null;
-  }
-
-  if (!response.ok) {
-    const error = new Error(data?.message || "Request failed");
-    error.status = response.status;
-    throw error;
-  }
-
-  return data;
 }
 
 async function postFormData(endpoint, formData) {
@@ -367,7 +363,7 @@ async function loadFeedPosts() {
       payload.profileUsername = profileUsername;
     }
 
-    const response = await postJson(endpoint, payload);
+    const response = await homePostJson(endpoint, payload);
     const posts = Array.isArray(response?.data?.posts) ? response.data.posts : [];
 
     if (isProfilePage) {
@@ -530,7 +526,7 @@ async function loadCommentsForCard(card) {
   commentList.innerHTML = '<div class="comment-item">Loading comments...</div>';
 
   try {
-    const response = await postJson("list-comments.php", {
+    const response = await homePostJson("list-comments.php", {
       postId,
       limit: 80,
     });
@@ -570,7 +566,7 @@ async function submitCommentFromWrap(commentWrap, inputNode) {
   inputNode.disabled = true;
 
   try {
-    const response = await postJson("add-comment.php", {
+    const response = await homePostJson("add-comment.php", {
       userId,
       postId,
       content: value,
@@ -671,7 +667,7 @@ function setupPostMenuActions() {
       deleteBtn.disabled = true;
 
       try {
-        await postJson("delete-post.php", {
+        await homePostJson("delete-post.php", {
           postId,
           userId,
         });
@@ -1074,7 +1070,7 @@ function setupReactions() {
       target.disabled = true;
 
       try {
-        const response = await postJson("toggle-like.php", { userId, postId });
+        const response = await homePostJson("toggle-like.php", { userId, postId });
         const liked = Boolean(response?.data?.liked);
         target.classList.toggle("active", liked);
         setReactButtonCount(target, response?.data?.likeCount || 0);
@@ -1097,7 +1093,7 @@ function setupReactions() {
       target.disabled = true;
 
       try {
-        const response = await postJson("toggle-bookmark.php", { userId, postId });
+        const response = await homePostJson("toggle-bookmark.php", { userId, postId });
         const bookmarked = Boolean(response?.data?.bookmarked);
         target.classList.toggle("active", bookmarked);
         setReactButtonCount(target, response?.data?.bookmarkCount || 0);
@@ -1158,7 +1154,7 @@ function setupComments() {
       deleteBtn.disabled = true;
 
       try {
-        const response = await postJson("delete-comment.php", {
+        const response = await homePostJson("delete-comment.php", {
           userId,
           commentId,
         });
@@ -1259,7 +1255,7 @@ function setupFollowButtons() {
     target.disabled = true;
 
     try {
-      const response = await postJson("toggle-follow.php", {
+      const response = await homePostJson("toggle-follow.php", {
         userId,
         targetUserId,
       });
@@ -1269,6 +1265,14 @@ function setupFollowButtons() {
       target.innerHTML = following
         ? '<i class="fa-solid fa-user-check" aria-hidden="true"></i><span>Following</span>'
         : '<i class="fa-solid fa-user-plus" aria-hidden="true"></i><span>Follow</span>';
+
+      window.dispatchEvent(
+        new CustomEvent("socialapp:following-changed", {
+          detail: {
+            delta: following ? 1 : -1,
+          },
+        })
+      );
     } catch (error) {
       window.alert(`Cannot update follow: ${error.message}`);
     } finally {
@@ -1311,7 +1315,7 @@ async function loadSuggestedUsers() {
   suggestList.innerHTML = '<li>Loading suggestions...</li>';
 
   try {
-    const response = await postJson("list-suggested-users.php", {
+    const response = await homePostJson("list-suggested-users.php", {
       userId: getViewerUserId(),
       limit: 6,
     });
@@ -1336,58 +1340,32 @@ async function loadSuggestedUsers() {
 }
 
 function setupTopbarMenu() {
-  const menuToggle = document.getElementById("user-menu-toggle");
-  const menu = document.getElementById("user-menu");
+  const setupUserMenu = window.SocialAppNavbar?.setupUserMenu;
   const settingBtn = document.getElementById("user-setting-btn");
   const mobileMenuLinks = Array.from(document.querySelectorAll(".user-menu-mobile-link"));
 
-  if (!(menuToggle instanceof HTMLButtonElement) || !(menu instanceof HTMLElement)) {
+  if (typeof setupUserMenu !== "function") {
     return;
   }
 
+  const menuController = setupUserMenu({
+    menuToggleId: "user-menu-toggle",
+    menuId: "user-menu",
+    settingBtnId: "user-setting-btn",
+    logoutBtnId: "logout-btn",
+    menuWrapSelector: ".user-menu-wrap",
+    settingsPage: "settings.html",
+    logoutPage: "index.html",
+  });
+
   const closeMenu = () => {
-    menu.setAttribute("hidden", "");
-    menuToggle.setAttribute("aria-expanded", "false");
+    if (menuController && typeof menuController.closeMenu === "function") {
+      menuController.closeMenu();
+    }
   };
-
-  const openMenu = () => {
-    menu.removeAttribute("hidden");
-    menuToggle.setAttribute("aria-expanded", "true");
-  };
-
-  menuToggle.addEventListener("click", () => {
-    if (menu.hasAttribute("hidden")) {
-      openMenu();
-      return;
-    }
-
-    closeMenu();
-  });
-
-  document.addEventListener("click", (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-
-    if (target.closest(".user-menu-wrap")) {
-      return;
-    }
-
-    closeMenu();
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      closeMenu();
-    }
-  });
 
   if (settingBtn instanceof HTMLButtonElement) {
-    settingBtn.addEventListener("click", () => {
-      closeMenu();
-      window.location.href = "settings.html";
-    });
+    settingBtn.addEventListener("click", closeMenu);
   }
 
   mobileMenuLinks.forEach((link) => {
@@ -1640,18 +1618,6 @@ function setupPhotoLightbox() {
   });
 }
 
-function setupLogout() {
-  const logoutBtn = document.getElementById("logout-btn");
-  if (!logoutBtn) {
-    return;
-  }
-
-  logoutBtn.addEventListener("click", () => {
-    window.localStorage.removeItem("socialAppCurrentUser");
-    window.location.href = "index.html";
-  });
-}
-
 if (enforceAuthGuard()) {
   setupViewer();
   setupComposer();
@@ -1664,7 +1630,6 @@ if (enforceAuthGuard()) {
   setupSearchNavigation();
   setupPhotoLightbox();
   updateBookmarkCount();
-  setupLogout();
   loadSuggestedUsers();
   loadFeedPosts();
 }

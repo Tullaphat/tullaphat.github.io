@@ -178,6 +178,32 @@ body {
   font-size: 0.88rem;
 }
 
+.profile-stats {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.profile-stat {
+  border: 1px solid rgba(13, 107, 96, 0.16);
+  border-radius: 12px;
+  padding: 0.45rem 0.5rem;
+  background: rgba(13, 107, 96, 0.06);
+  display: grid;
+  gap: 0.1rem;
+}
+
+.profile-stat strong {
+  font-size: 0.95rem;
+  color: #1d2730;
+}
+
+.profile-stat span {
+  font-size: 0.75rem;
+  color: #5a6775;
+}
+
 .app-left-nav {
   margin-top: 1rem;
   display: grid;

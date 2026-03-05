@@ -216,8 +216,34 @@
   font-size: 0.88rem;
 }
 
+.profile-stats {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.profile-stat {
+  border: 1px solid rgba(13, 107, 96, 0.16);
+  border-radius: 12px;
+  padding: 0.45rem 0.5rem;
+  background: rgba(13, 107, 96, 0.06);
+  display: grid;
+  gap: 0.1rem;
+}
+
+.profile-stat strong {
+  font-size: 0.95rem;
+  color: var(--home-ink);
+}
+
+.profile-stat span {
+  font-size: 0.75rem;
+  color: var(--home-soft);
+}
+
 .left-nav {
-  margin: 1rem 0;
+  margin: 1rem 0 0;
   display: grid;
   gap: 0.35rem;
 }
@@ -943,12 +969,22 @@
 
   .composer-actions {
     gap: 0.5rem;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    justify-content: space-between;
   }
 
   .composer-tools {
-    width: 100%;
-    justify-content: space-between;
+    width: auto;
+    min-width: 0;
+    flex: 1 1 auto;
+    justify-content: flex-start;
+    overflow: hidden;
+  }
+
+  .hint {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .react-btn span {

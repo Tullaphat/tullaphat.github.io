@@ -19,45 +19,8 @@
     />
     <link rel="stylesheet" href="assets/css/home-page.css" />
   </head>
-  <body class="home-body has-mobile-tabbar">
-    <header class="home-topbar">
-      <div class="brand">Social App</div>
-      <div class="topbar-search-wrap">
-        <input id="search-input" type="search" placeholder="Search people, posts, groups" />
-      </div>
-      <div class="topbar-actions">
-        <button
-          id="mobile-search-toggle"
-          class="icon-btn mobile-search-btn"
-          type="button"
-          aria-label="Open search"
-          aria-expanded="false"
-        >
-          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-        </button>
-
-        <button id="notification-btn" class="icon-btn notify-btn" type="button" aria-label="Notifications">
-          <i class="fa-regular fa-bell" aria-hidden="true"></i>
-          <span class="notify-dot"></span>
-        </button>
-
-        <div class="user-menu-wrap">
-          <button id="user-menu-toggle" class="icon-btn user-menu-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="User menu">
-            <i class="fa-regular fa-user" aria-hidden="true"></i>
-          </button>
-          <div id="user-menu" class="user-menu" role="menu" hidden>
-            <button id="user-setting-btn" class="user-menu-item" role="menuitem" type="button">
-              <i class="fa-solid fa-gear" aria-hidden="true"></i>
-              <span>User Setting</span>
-            </button>
-            <button id="logout-btn" class="user-menu-item" role="menuitem" type="button">
-              <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
-              <span>Logout</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </header>
+  <body class="home-body has-mobile-tabbar" data-left-active="feed" data-mobile-active="feed">
+    <header id="home-topbar-root" class="home-topbar"></header>
 
     <section id="mobile-search-panel" class="mobile-search-panel" hidden>
       <input
@@ -69,21 +32,7 @@
     </section>
 
     <main class="home-layout">
-      <aside id="mobile-nav-panel" class="home-left card-glass">
-        <section class="profile-mini">
-          <div class="avatar"></div>
-          <div>
-            <h2 id="welcome-name">Tullaphat User</h2>
-            <p id="welcome-username">@user</p>
-          </div>
-        </section>
-
-        <nav class="left-nav">
-          <a href="#" class="active">Feed</a>
-          <a href="friends.html">Friends</a>
-          <a href="bookmarks.html">Bookmarks</a>
-        </nav>
-      </aside>
+      <aside id="mobile-nav-panel" class="home-left card-glass"></aside>
 
       <section class="home-center">
         <section class="composer card-glass">
@@ -128,20 +77,7 @@
       </aside>
     </main>
 
-    <nav class="mobile-tabbar" aria-label="Primary">
-      <a class="mobile-tabbar-item active" href="home.html">
-        <i class="fa-solid fa-house" aria-hidden="true"></i>
-        <span>Feed</span>
-      </a>
-      <a class="mobile-tabbar-item" href="friends.html">
-        <i class="fa-solid fa-user-group" aria-hidden="true"></i>
-        <span>Friends</span>
-      </a>
-      <a class="mobile-tabbar-item" href="bookmarks.html">
-        <i class="fa-solid fa-bookmark" aria-hidden="true"></i>
-        <span>Bookmarks</span>
-      </a>
-    </nav>
+    <nav id="home-mobile-tabbar-root" class="mobile-tabbar" aria-label="Primary"></nav>
 
     <section id="photo-lightbox" class="photo-lightbox" hidden>
       <button id="lightbox-close" class="lightbox-close" type="button" aria-label="Close photo viewer">
@@ -159,6 +95,9 @@
 
     <script src="assets/js/app-config.js"></script>
     <script src="assets/js/auth.js"></script>
+    <script src="assets/js/common-utils.js"></script>
+    <script src="assets/js/shell.js"></script>
+    <script src="assets/js/navbar-shared.js"></script>
     <script src="assets/js/home.js"></script>
   </body>
 </html>

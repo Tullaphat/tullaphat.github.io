@@ -1,60 +1,83 @@
-function loadViewer() {
-  try {
-    const raw = window.localStorage.getItem("socialAppCurrentUser");
-    if (!raw) {
+const bookmarksUtils = window.SocialAppUtils || {
+  loadViewer() {
+    try {
+      const raw = window.localStorage.getItem("socialAppCurrentUser");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
       return null;
     }
+  },
+  getViewerUserId() {
+    const viewer = bookmarksUtils.loadViewer() || {};
+    return Number(viewer.id || 0);
+  },
+  profilePageUrl(username, userId) {
+    const normalizedUsername = String(username || "").trim().toLowerCase();
+    if (normalizedUsername) {
+      return `profile.html?username=${encodeURIComponent(normalizedUsername)}`;
+    }
 
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
+    return `profile.html?username=${encodeURIComponent(`user${Number(userId || 0)}`)}`;
+  },
+  resolveProfileImageUrl(profileImageUrl, profileImageFilename) {
+    if (profileImageFilename) {
+      const config = window.APP_CONFIG || {};
+      const modeFromQuery = new URLSearchParams(window.location.search).get("mode");
+      const modeFromStorage = window.localStorage.getItem("socialAppMode");
+      const mode = modeFromQuery || modeFromStorage || config.mode || "production";
+      const normalizedMode = mode === "local" ? "local" : "production";
+      const apiBase = {
+        local: "http://localhost/social-app/api",
+        production: "https://playground.rankongpor.com/social-app/api",
+        ...(config.apiBase || {}),
+      };
 
-function getViewerUserId() {
-  const viewer = loadViewer() || {};
-  return Number(viewer.id || 0);
-}
+      return `${apiBase[normalizedMode]}/uploads/profile/${encodeURIComponent(profileImageFilename)}`;
+    }
 
-function profilePageUrl(username, userId) {
-  const normalizedUsername = String(username || "").trim().toLowerCase();
-  if (normalizedUsername) {
-    return `profile.html?username=${encodeURIComponent(normalizedUsername)}`;
-  }
+    return profileImageUrl || "";
+  },
+  async postJson(endpoint, payload) {
+    const config = window.APP_CONFIG || {};
+    const modeFromQuery = new URLSearchParams(window.location.search).get("mode");
+    const modeFromStorage = window.localStorage.getItem("socialAppMode");
+    const mode = modeFromQuery || modeFromStorage || config.mode || "production";
+    const normalizedMode = mode === "local" ? "local" : "production";
+    const apiBase = {
+      local: "http://localhost/social-app/api",
+      production: "https://playground.rankongpor.com/social-app/api",
+      ...(config.apiBase || {}),
+    };
 
-  return `profile.html?username=${encodeURIComponent(`user${Number(userId || 0)}`)}`;
-}
+    const response = await fetch(`${apiBase[normalizedMode]}/${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
 
-function getApiBaseUrl() {
-  const config = window.APP_CONFIG || {};
-  const modeFromQuery = new URLSearchParams(window.location.search).get("mode");
-  const modeFromStorage = window.localStorage.getItem("socialAppMode");
-  const mode = modeFromQuery || modeFromStorage || config.mode || "production";
-  const normalizedMode = mode === "local" ? "local" : "production";
-  const apiBase = {
-    local: "http://localhost/social-app/api",
-    production: "https://playground.rankongpor.com/social-app/api",
-    ...(config.apiBase || {}),
-  };
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
 
-  return apiBase[normalizedMode];
-}
+    if (!response.ok) {
+      const error = new Error(data?.message || "Request failed");
+      error.status = response.status;
+      throw error;
+    }
 
-function getProfileUploadBasePath() {
-  return `${getApiBaseUrl()}/uploads/profile`;
-}
+    return data;
+  },
+};
 
-function resolveProfileImageUrl(profileImageUrl, profileImageFilename) {
-  if (profileImageFilename) {
-    return `${getProfileUploadBasePath()}/${encodeURIComponent(profileImageFilename)}`;
-  }
-
-  if (profileImageUrl) {
-    return profileImageUrl;
-  }
-
-  return "";
-}
+const bookmarksGetViewerUserId = bookmarksUtils.getViewerUserId;
+const bookmarksProfilePageUrl = bookmarksUtils.profilePageUrl;
+const bookmarksResolveProfileImageUrl = bookmarksUtils.resolveProfileImageUrl;
+const bookmarksPostJson = bookmarksUtils.postJson;
 
 function formatRelativeTime(rawDate) {
   const createdAt = new Date(rawDate);
@@ -95,32 +118,6 @@ function getReactionValue(post, key) {
   return Math.max(0, numericValue);
 }
 
-async function postJson(endpoint, payload) {
-  const response = await fetch(`${getApiBaseUrl()}/${endpoint}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  let data = null;
-
-  try {
-    data = await response.json();
-  } catch {
-    data = null;
-  }
-
-  if (!response.ok) {
-    const error = new Error(data?.message || "Request failed");
-    error.status = response.status;
-    throw error;
-  }
-
-  return data;
-}
-
 function setSummary(text) {
   const summary = document.getElementById("bookmarks-summary");
   if (summary instanceof HTMLElement) {
@@ -147,7 +144,7 @@ function createBookmarkCard(post) {
   const lastName = post?.author?.lastName || "";
   const fullName = `${firstName} ${lastName}`.trim();
   const avatarText = (firstName || fullName || "U").charAt(0).toUpperCase();
-  const avatarUrl = resolveProfileImageUrl(
+  const avatarUrl = bookmarksResolveProfileImageUrl(
     post?.author?.profileImageUrl || "",
     post?.author?.profileImageFilename || ""
   );
@@ -169,7 +166,7 @@ function createBookmarkCard(post) {
         avatarUrl ? "" : avatarText
       }</div>
       <div class="feed-author-meta">
-        <h3><a class="feed-author-name-link" href="${profilePageUrl(post?.author?.username || "", post?.author?.id || 0)}">${fullName || "User"}</a></h3>
+        <h3><a class="feed-author-name-link" href="${bookmarksProfilePageUrl(post?.author?.username || "", post?.author?.id || 0)}">${fullName || "User"}</a></h3>
         <p>${createdAtLabel}</p>
       </div>
       </div>
@@ -231,14 +228,14 @@ function renderBookmarkedPosts(posts) {
 }
 
 async function loadBookmarkedPosts() {
-  const userId = getViewerUserId();
+  const userId = bookmarksGetViewerUserId();
   if (!userId) {
     window.location.href = "index.html";
     return;
   }
 
   try {
-    const response = await postJson("list-bookmarked-posts.php", {
+    const response = await bookmarksPostJson("list-bookmarked-posts.php", {
       userId,
       limit: 80,
     });

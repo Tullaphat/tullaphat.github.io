@@ -19,51 +19,11 @@
     />
     <link rel="stylesheet" href="assets/css/bookmarks-page.css" />
   </head>
-  <body class="bookmarks-body has-mobile-tabbar">
-    <header class="app-topbar">
-      <a class="app-brand" href="home.html">Social App</a>
-      <div class="app-topbar-search">
-        <input id="topbar-search-input" type="search" placeholder="Search people, posts, groups" />
-      </div>
-      <div class="app-topbar-actions">
-        <button id="app-notification-btn" class="app-icon-btn app-notify-btn" type="button" aria-label="Notifications">
-          <i class="fa-regular fa-bell" aria-hidden="true"></i>
-          <span class="app-notify-dot"></span>
-        </button>
-        <div class="app-user-menu-wrap">
-          <button id="app-user-menu-toggle" class="app-icon-btn app-user-menu-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="User menu">
-            <i class="fa-regular fa-user" aria-hidden="true"></i>
-          </button>
-          <div id="app-user-menu" class="app-user-menu" role="menu" hidden>
-            <button id="app-user-setting-btn" class="app-user-menu-item" role="menuitem" type="button">
-              <i class="fa-solid fa-gear" aria-hidden="true"></i>
-              <span>User Setting</span>
-            </button>
-            <button id="app-logout-btn" class="app-user-menu-item" role="menuitem" type="button">
-              <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
-              <span>Logout</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </header>
+  <body class="bookmarks-body has-mobile-tabbar" data-left-active="bookmarks" data-mobile-active="bookmarks">
+    <header id="app-topbar-root" class="app-topbar"></header>
 
     <main class="bookmarks-layout">
-      <aside class="app-left-sidebar">
-        <section class="app-left-profile">
-          <div class="app-left-avatar" id="app-left-avatar"></div>
-          <div>
-            <h2 id="app-left-name">User</h2>
-            <p id="app-left-username">@user</p>
-          </div>
-        </section>
-        <nav class="app-left-nav">
-          <a href="home.html">Feed</a>
-          <a href="friends.html">Friends</a>
-          <a class="active" href="bookmarks.html">Bookmarks</a>
-          <!-- <a href="settings.html">Settings</a> -->
-        </nav>
-      </aside>
+      <aside id="app-left-sidebar-root" class="app-left-sidebar"></aside>
 
       <section class="bookmarks-panel card-glass">
         <header class="bookmarks-panel-head">
@@ -74,22 +34,12 @@
       </section>
     </main>
 
-    <nav class="mobile-tabbar" aria-label="Primary">
-      <a class="mobile-tabbar-item" href="home.html">
-        <i class="fa-solid fa-house" aria-hidden="true"></i>
-        <span>Feed</span>
-      </a>
-      <a class="mobile-tabbar-item" href="friends.html">
-        <i class="fa-solid fa-user-group" aria-hidden="true"></i>
-        <span>Friends</span>
-      </a>
-      <a class="mobile-tabbar-item active" href="bookmarks.html">
-        <i class="fa-solid fa-bookmark" aria-hidden="true"></i>
-        <span>Bookmarks</span>
-      </a>
-    </nav>
+    <nav id="mobile-tabbar-root" class="mobile-tabbar" aria-label="Primary"></nav>
 
     <script src="assets/js/app-config.js"></script>
+    <script src="assets/js/common-utils.js"></script>
+    <script src="assets/js/shell.js"></script>
+    <script src="assets/js/navbar-shared.js"></script>
     <script src="assets/js/navbar.js"></script>
     <script src="assets/js/bookmarks.js"></script>
   </body>
