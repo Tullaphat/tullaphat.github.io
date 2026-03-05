@@ -1,3 +1,30 @@
+const settingsUtils = window.SocialAppUtils || {
+  getApiBaseUrl() {
+    const config = window.APP_CONFIG || {};
+    const modeFromQuery = new URLSearchParams(window.location.search).get("mode");
+    const modeFromStorage = window.localStorage.getItem("socialAppMode");
+    const mode = modeFromQuery || modeFromStorage || config.mode || "production";
+    const normalizedMode = mode === "local" ? "local" : "production";
+    const apiBase = {
+      local: "http://localhost/social-app/api",
+      production: "https://playground.rankongpor.com/social-app/api",
+      ...(config.apiBase || {}),
+    };
+
+    return apiBase[normalizedMode];
+  },
+  resolveProfileImageUrl(profileImageUrl, profileImageFilename) {
+    if (profileImageFilename) {
+      return `${settingsUtils.getApiBaseUrl()}/uploads/profile/${encodeURIComponent(profileImageFilename)}`;
+    }
+
+    return profileImageUrl || "";
+  },
+};
+
+const settingsGetApiBaseUrl = settingsUtils.getApiBaseUrl;
+const settingsResolveProfileImageUrl = settingsUtils.resolveProfileImageUrl;
+
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
@@ -14,23 +41,8 @@ function getCurrentUser() {
   }
 }
 
-function getApiBaseUrl() {
-  const config = window.APP_CONFIG || {};
-  const modeFromQuery = new URLSearchParams(window.location.search).get("mode");
-  const modeFromStorage = window.localStorage.getItem("socialAppMode");
-  const mode = modeFromQuery || modeFromStorage || config.mode || "production";
-  const normalizedMode = mode === "local" ? "local" : "production";
-  const apiBase = {
-    local: "http://localhost/social-app/api",
-    production: "https://playground.rankongpor.com/social-app/api",
-    ...(config.apiBase || {}),
-  };
-
-  return apiBase[normalizedMode];
-}
-
 async function postFormData(endpoint, formData) {
-  const response = await fetch(`${getApiBaseUrl()}/${endpoint}`, {
+  const response = await fetch(`${settingsGetApiBaseUrl()}/${endpoint}`, {
     method: "POST",
     body: formData,
   });
@@ -51,22 +63,6 @@ async function postFormData(endpoint, formData) {
 
 function getProfileImage() {
   return window.localStorage.getItem("socialAppProfileImage") || "";
-}
-
-function getProfileUploadBasePath() {
-  return `${getApiBaseUrl()}/uploads/profile`;
-}
-
-function resolveProfileImageUrl(profileImageUrl, profileImageFilename) {
-  if (profileImageFilename) {
-    return `${getProfileUploadBasePath()}/${encodeURIComponent(profileImageFilename)}`;
-  }
-
-  if (profileImageUrl) {
-    return profileImageUrl;
-  }
-
-  return "";
 }
 
 function applyProfilePreview(imageDataUrl, firstName, lastName) {
@@ -116,7 +112,7 @@ function loadSettingsForm() {
   const cancelButton = document.getElementById("cancel-settings-btn");
 
   let profileImageData =
-    resolveProfileImageUrl(user.profileImageUrl || "", user.profileImageFilename || "") ||
+    settingsResolveProfileImageUrl(user.profileImageUrl || "", user.profileImageFilename || "") ||
     getProfileImage() ||
     user.profileImage ||
     "";
@@ -262,7 +258,7 @@ function loadSettingsForm() {
         email: updatedUser.email || email,
         gender: updatedUser.gender || gender,
         profileImageFilename: updatedUser.profileImageFilename || "",
-        profileImageUrl: resolveProfileImageUrl(
+        profileImageUrl: settingsResolveProfileImageUrl(
           updatedUser.profileImageUrl || "",
           updatedUser.profileImageFilename || ""
         ),

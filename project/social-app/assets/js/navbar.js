@@ -1,15 +1,16 @@
-function loadNavbarViewer() {
-  try {
-    const raw = window.localStorage.getItem("socialAppCurrentUser");
-    if (!raw) {
+const navbarUtils = window.SocialAppUtils || {
+  loadViewer() {
+    try {
+      const raw = window.localStorage.getItem("socialAppCurrentUser");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
       return null;
     }
+  },
+};
 
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
+const navbarLoadViewer = navbarUtils.loadViewer;
+const { setupUserMenu } = window.SocialAppNavbar || {};
 
 function setupNavbarProfileButton() {
   const menuToggle = document.getElementById("app-user-menu-toggle");
@@ -18,7 +19,7 @@ function setupNavbarProfileButton() {
   }
 
   const icon = menuToggle.querySelector("i");
-  const viewer = loadNavbarViewer() || {};
+  const viewer = navbarLoadViewer() || {};
   const profileImage =
     viewer.profileImage ||
     viewer.profileImageUrl ||
@@ -50,7 +51,7 @@ function setupLeftSidebarProfile() {
     return;
   }
 
-  const viewer = loadNavbarViewer() || {};
+  const viewer = navbarLoadViewer() || {};
   const firstName = String(viewer.firstName || "User");
   const lastName = String(viewer.lastName || "");
   const username = String(viewer.username || "").trim().toLowerCase();
@@ -75,66 +76,19 @@ function setupLeftSidebarProfile() {
 }
 
 function setupNavbarMenu() {
-  const menuToggle = document.getElementById("app-user-menu-toggle");
-  const menu = document.getElementById("app-user-menu");
-  const settingBtn = document.getElementById("app-user-setting-btn");
-  const logoutBtn = document.getElementById("app-logout-btn");
-
-  if (!(menuToggle instanceof HTMLButtonElement) || !(menu instanceof HTMLElement)) {
+  if (typeof setupUserMenu !== "function") {
     return;
   }
 
-  const closeMenu = () => {
-    menu.setAttribute("hidden", "");
-    menuToggle.setAttribute("aria-expanded", "false");
-  };
-
-  const openMenu = () => {
-    menu.removeAttribute("hidden");
-    menuToggle.setAttribute("aria-expanded", "true");
-  };
-
-  menuToggle.addEventListener("click", () => {
-    if (menu.hasAttribute("hidden")) {
-      openMenu();
-      return;
-    }
-
-    closeMenu();
+  setupUserMenu({
+    menuToggleId: "app-user-menu-toggle",
+    menuId: "app-user-menu",
+    settingBtnId: "app-user-setting-btn",
+    logoutBtnId: "app-logout-btn",
+    menuWrapSelector: ".app-user-menu-wrap",
+    settingsPage: "settings.html",
+    logoutPage: "index.html",
   });
-
-  document.addEventListener("click", (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-
-    if (target.closest(".app-user-menu-wrap")) {
-      return;
-    }
-
-    closeMenu();
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      closeMenu();
-    }
-  });
-
-  if (settingBtn instanceof HTMLButtonElement) {
-    settingBtn.addEventListener("click", () => {
-      closeMenu();
-      window.location.href = "settings.html";
-    });
-  }
-
-  if (logoutBtn instanceof HTMLButtonElement) {
-    logoutBtn.addEventListener("click", () => {
-      window.localStorage.removeItem("socialAppCurrentUser");
-      window.location.href = "index.html";
-    });
-  }
 }
 
 function setupNavbarSearch() {

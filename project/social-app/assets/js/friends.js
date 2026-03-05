@@ -1,86 +1,83 @@
-function loadViewer() {
-  try {
-    const raw = window.localStorage.getItem("socialAppCurrentUser");
-    if (!raw) {
+const friendsUtils = window.SocialAppUtils || {
+  loadViewer() {
+    try {
+      const raw = window.localStorage.getItem("socialAppCurrentUser");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
       return null;
     }
+  },
+  getViewerUserId() {
+    const viewer = friendsUtils.loadViewer() || {};
+    return Number(viewer.id || 0);
+  },
+  profilePageUrl(username, userId) {
+    const normalizedUsername = String(username || "").trim().toLowerCase();
+    if (normalizedUsername) {
+      return `profile.html?username=${encodeURIComponent(normalizedUsername)}`;
+    }
 
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
+    return `profile.html?username=${encodeURIComponent(`user${Number(userId || 0)}`)}`;
+  },
+  resolveProfileImageUrl(profileImageUrl, profileImageFilename) {
+    if (profileImageFilename) {
+      const config = window.APP_CONFIG || {};
+      const modeFromQuery = new URLSearchParams(window.location.search).get("mode");
+      const modeFromStorage = window.localStorage.getItem("socialAppMode");
+      const mode = modeFromQuery || modeFromStorage || config.mode || "production";
+      const normalizedMode = mode === "local" ? "local" : "production";
+      const apiBase = {
+        local: "http://localhost/social-app/api",
+        production: "https://playground.rankongpor.com/social-app/api",
+        ...(config.apiBase || {}),
+      };
 
-function getViewerUserId() {
-  const viewer = loadViewer() || {};
-  return Number(viewer.id || 0);
-}
+      return `${apiBase[normalizedMode]}/uploads/profile/${encodeURIComponent(profileImageFilename)}`;
+    }
 
-function profilePageUrl(username, userId) {
-  const normalizedUsername = String(username || "").trim().toLowerCase();
-  if (normalizedUsername) {
-    return `profile.html?username=${encodeURIComponent(normalizedUsername)}`;
-  }
+    return profileImageUrl || "";
+  },
+  async postJson(endpoint, payload) {
+    const config = window.APP_CONFIG || {};
+    const modeFromQuery = new URLSearchParams(window.location.search).get("mode");
+    const modeFromStorage = window.localStorage.getItem("socialAppMode");
+    const mode = modeFromQuery || modeFromStorage || config.mode || "production";
+    const normalizedMode = mode === "local" ? "local" : "production";
+    const apiBase = {
+      local: "http://localhost/social-app/api",
+      production: "https://playground.rankongpor.com/social-app/api",
+      ...(config.apiBase || {}),
+    };
 
-  return `profile.html?username=${encodeURIComponent(`user${Number(userId || 0)}`)}`;
-}
+    const response = await fetch(`${apiBase[normalizedMode]}/${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
 
-function getApiBaseUrl() {
-  const config = window.APP_CONFIG || {};
-  const modeFromQuery = new URLSearchParams(window.location.search).get("mode");
-  const modeFromStorage = window.localStorage.getItem("socialAppMode");
-  const mode = modeFromQuery || modeFromStorage || config.mode || "production";
-  const normalizedMode = mode === "local" ? "local" : "production";
-  const apiBase = {
-    local: "http://localhost/social-app/api",
-    production: "https://playground.rankongpor.com/social-app/api",
-    ...(config.apiBase || {}),
-  };
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
 
-  return apiBase[normalizedMode];
-}
+    if (!response.ok) {
+      const error = new Error(data?.message || "Request failed");
+      error.status = response.status;
+      throw error;
+    }
 
-function getProfileUploadBasePath() {
-  return `${getApiBaseUrl()}/uploads/profile`;
-}
+    return data;
+  },
+};
 
-function resolveProfileImageUrl(profileImageUrl, profileImageFilename) {
-  if (profileImageFilename) {
-    return `${getProfileUploadBasePath()}/${encodeURIComponent(profileImageFilename)}`;
-  }
-
-  if (profileImageUrl) {
-    return profileImageUrl;
-  }
-
-  return "";
-}
-
-async function postJson(endpoint, payload) {
-  const response = await fetch(`${getApiBaseUrl()}/${endpoint}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  let data = null;
-
-  try {
-    data = await response.json();
-  } catch {
-    data = null;
-  }
-
-  if (!response.ok) {
-    const error = new Error(data?.message || "Request failed");
-    error.status = response.status;
-    throw error;
-  }
-
-  return data;
-}
+const friendsGetViewerUserId = friendsUtils.getViewerUserId;
+const friendsProfilePageUrl = friendsUtils.profilePageUrl;
+const friendsResolveProfileImageUrl = friendsUtils.resolveProfileImageUrl;
+const friendsPostJson = friendsUtils.postJson;
 
 function setSummary(text) {
   const summary = document.getElementById("friends-summary");
@@ -107,7 +104,7 @@ function createFriendCard(user) {
   const lastName = user?.lastName || "";
   const fullName = `${firstName} ${lastName}`.trim();
   const avatarText = (firstName || fullName || "U").charAt(0).toUpperCase();
-  const avatarUrl = resolveProfileImageUrl(user?.profileImageUrl || "", user?.profileImageFilename || "");
+  const avatarUrl = friendsResolveProfileImageUrl(user?.profileImageUrl || "", user?.profileImageFilename || "");
   const username = String(user?.username || `user${Number(user.id || 0)}`).trim().toLowerCase();
 
   card.innerHTML = `
@@ -115,7 +112,7 @@ function createFriendCard(user) {
       avatarUrl ? "" : avatarText
     }</div>
     <div class="search-user-meta">
-      <h2><a class="search-user-link" href="${profilePageUrl(user?.username || "", user?.id || 0)}">${fullName || "User"}</a></h2>
+      <h2><a class="search-user-link" href="${friendsProfilePageUrl(user?.username || "", user?.id || 0)}">${fullName || "User"}</a></h2>
       <p>@${username}</p>
     </div>
     <button class="follow-result-btn following" type="button" data-action="unfollow">
@@ -151,14 +148,14 @@ function renderFriends(users) {
 }
 
 async function loadFollowingUsers() {
-  const userId = getViewerUserId();
+  const userId = friendsGetViewerUserId();
   if (!userId) {
     window.location.href = "index.html";
     return;
   }
 
   try {
-    const response = await postJson("list-following-users.php", {
+    const response = await friendsPostJson("list-following-users.php", {
       userId,
       limit: 100,
     });
@@ -185,7 +182,7 @@ function setupUnfollow() {
 
     const card = button.closest(".search-user-card");
     const targetUserId = Number(card?.dataset.userId || 0);
-    const userId = getViewerUserId();
+    const userId = friendsGetViewerUserId();
 
     if (!userId || targetUserId <= 0) {
       window.alert("Please login again before updating follow.");
@@ -195,7 +192,7 @@ function setupUnfollow() {
     button.disabled = true;
 
     try {
-      const response = await postJson("toggle-follow.php", {
+      const response = await friendsPostJson("toggle-follow.php", {
         userId,
         targetUserId,
       });
@@ -209,6 +206,22 @@ function setupUnfollow() {
         }
 
         setSummary(`Following ${remain} user(s).`);
+
+        window.dispatchEvent(
+          new CustomEvent("socialapp:following-changed", {
+            detail: {
+              totalFollowing: remain,
+            },
+          })
+        );
+      } else if (isFollowing) {
+        window.dispatchEvent(
+          new CustomEvent("socialapp:following-changed", {
+            detail: {
+              delta: 1,
+            },
+          })
+        );
       }
     } catch (error) {
       window.alert(`Cannot update follow: ${error.message}`);

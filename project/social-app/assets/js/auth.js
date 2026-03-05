@@ -36,8 +36,12 @@ window.setAppMode = setAppMode;
 const APP_RUNTIME = getAppConfig();
 
 function renderModeOverlay() {
+  if (APP_RUNTIME.mode !== "local") {
+    return;
+  }
+
   const badge = document.createElement("div");
-  const modeLabel = APP_RUNTIME.mode === "local" ? "LOCAL" : "PRODUCTION";
+  const modeLabel = "LOCAL";
   badge.className = `mode-overlay mode-overlay-${APP_RUNTIME.mode}`;
   badge.setAttribute("aria-live", "polite");
   badge.textContent = `Mode: ${modeLabel}`;
