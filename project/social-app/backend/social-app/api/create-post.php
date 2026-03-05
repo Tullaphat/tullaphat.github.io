@@ -30,11 +30,11 @@ if ($content === '' && !$hasPhotos) {
 }
 
 $uploadDir = __DIR__ . '/uploads/posts';
-$allowedMimeToExt = [
-    'image/jpeg' => 'jpg',
-    'image/png' => 'png',
-    'image/webp' => 'webp',
-    'image/gif' => 'gif',
+$allowedMimeTypes = [
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/gif',
 ];
 
 $normalizeUploads = static function (?array $photos): array {
@@ -127,14 +127,14 @@ try {
         }
 
         $mimeType = $finfo->file($tmpName) ?: '';
-        if (!isset($allowedMimeToExt[$mimeType])) {
+        if (!in_array($mimeType, $allowedMimeTypes, true)) {
             json_response(422, [
                 'success' => false,
                 'message' => 'Only JPG, PNG, WEBP, and GIF photos are allowed.',
             ]);
         }
 
-        $ext = $allowedMimeToExt[$mimeType];
+        $ext = optimized_image_extension($mimeType);
         $newFilename = sprintf(
             'post-%d-%s-%02d-%s.%s',
             $userId,
@@ -145,7 +145,13 @@ try {
         );
 
         $destination = $uploadDir . '/' . $newFilename;
-        if (!move_uploaded_file($tmpName, $destination)) {
+        if (!optimize_uploaded_image($tmpName, $destination, $mimeType, [
+            'max_width' => 1600,
+            'max_height' => 1600,
+            'jpeg_quality' => 82,
+            'webp_quality' => 78,
+            'png_compression' => 8,
+        ])) {
             throw new RuntimeException('Cannot save uploaded post photo.');
         }
 

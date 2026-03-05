@@ -144,29 +144,31 @@ try {
         }
 
         $tmpName = (string)($uploadedProfile['tmp_name'] ?? '');
-        $originalName = (string)($uploadedProfile['name'] ?? 'profile');
+        if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+            json_response(422, [
+                'success' => false,
+                'message' => 'Invalid uploaded profile image payload.',
+            ]);
+        }
 
         $finfo = new finfo(FILEINFO_MIME_TYPE);
         $mimeType = $finfo->file($tmpName) ?: '';
 
-        $allowedMimeToExt = [
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-            'image/gif' => 'gif',
+        $allowedMimeTypes = [
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'image/gif',
         ];
 
-        if (!isset($allowedMimeToExt[$mimeType])) {
+        if (!in_array($mimeType, $allowedMimeTypes, true)) {
             json_response(422, [
                 'success' => false,
                 'message' => 'Only JPG, PNG, WEBP, and GIF are allowed.',
             ]);
         }
 
-        $ext = $allowedMimeToExt[$mimeType];
-        $baseName = preg_replace('/[^a-zA-Z0-9_-]+/', '-', pathinfo($originalName, PATHINFO_FILENAME));
-        $baseName = trim((string)$baseName, '-');
-        $baseName = $baseName !== '' ? $baseName : 'profile';
+        $ext = optimized_image_extension($mimeType);
 
         $newFilename = sprintf(
             'user-%d-%s-%s.%s',
@@ -177,7 +179,13 @@ try {
         );
 
         $destination = $uploadDir . '/' . $newFilename;
-        if (!move_uploaded_file($tmpName, $destination)) {
+        if (!optimize_uploaded_image($tmpName, $destination, $mimeType, [
+            'max_width' => 1024,
+            'max_height' => 1024,
+            'jpeg_quality' => 84,
+            'webp_quality' => 80,
+            'png_compression' => 8,
+        ])) {
             throw new RuntimeException('Cannot save uploaded profile image.');
         }
 

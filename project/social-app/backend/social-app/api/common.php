@@ -108,6 +108,140 @@ function fallback_username_from_id(int $userId): string
     return 'user' . max(1, $userId);
 }
 
+function optimized_image_extension(string $mimeType): string
+{
+    $mimeType = strtolower(trim($mimeType));
+
+    if ($mimeType === 'image/gif') {
+        return 'gif';
+    }
+
+    if (function_exists('imagewebp')) {
+        return 'webp';
+    }
+
+    if ($mimeType === 'image/png') {
+        return 'png';
+    }
+
+    return 'jpg';
+}
+
+function optimize_uploaded_image(string $sourcePath, string $destinationPath, string $mimeType, array $options = []): bool
+{
+    $maxWidth = (int)($options['max_width'] ?? 1600);
+    $maxHeight = (int)($options['max_height'] ?? 1600);
+    $jpegQuality = (int)($options['jpeg_quality'] ?? 82);
+    $webpQuality = (int)($options['webp_quality'] ?? 80);
+    $pngCompression = (int)($options['png_compression'] ?? 8);
+
+    if (strtolower(trim($mimeType)) === 'image/gif') {
+        return move_uploaded_file($sourcePath, $destinationPath) || rename($sourcePath, $destinationPath);
+    }
+
+    if (!extension_loaded('gd') || !is_file($sourcePath)) {
+        return move_uploaded_file($sourcePath, $destinationPath) || rename($sourcePath, $destinationPath);
+    }
+
+    $imageInfo = @getimagesize($sourcePath);
+    if (!is_array($imageInfo) || !isset($imageInfo[0], $imageInfo[1])) {
+        return move_uploaded_file($sourcePath, $destinationPath) || rename($sourcePath, $destinationPath);
+    }
+
+    $sourceWidth = (int)$imageInfo[0];
+    $sourceHeight = (int)$imageInfo[1];
+
+    if ($sourceWidth <= 0 || $sourceHeight <= 0) {
+        return move_uploaded_file($sourcePath, $destinationPath) || rename($sourcePath, $destinationPath);
+    }
+
+    $sourceImage = null;
+    switch (strtolower($mimeType)) {
+        case 'image/jpeg':
+            $sourceImage = @imagecreatefromjpeg($sourcePath);
+            break;
+        case 'image/png':
+            $sourceImage = @imagecreatefrompng($sourcePath);
+            break;
+        case 'image/webp':
+            if (function_exists('imagecreatefromwebp')) {
+                $sourceImage = @imagecreatefromwebp($sourcePath);
+            }
+            break;
+        case 'image/gif':
+            $sourceImage = @imagecreatefromgif($sourcePath);
+            break;
+    }
+
+    if (!$sourceImage) {
+        return move_uploaded_file($sourcePath, $destinationPath) || rename($sourcePath, $destinationPath);
+    }
+
+    $scale = min(
+        1,
+        $maxWidth > 0 ? ($maxWidth / $sourceWidth) : 1,
+        $maxHeight > 0 ? ($maxHeight / $sourceHeight) : 1
+    );
+
+    $targetWidth = max(1, (int)round($sourceWidth * $scale));
+    $targetHeight = max(1, (int)round($sourceHeight * $scale));
+    $targetImage = imagecreatetruecolor($targetWidth, $targetHeight);
+
+    if (!$targetImage) {
+        imagedestroy($sourceImage);
+        return move_uploaded_file($sourcePath, $destinationPath) || rename($sourcePath, $destinationPath);
+    }
+
+    $isAlphaImage = in_array(strtolower($mimeType), ['image/png', 'image/webp', 'image/gif'], true);
+    if ($isAlphaImage) {
+        imagealphablending($targetImage, false);
+        imagesavealpha($targetImage, true);
+        $transparent = imagecolorallocatealpha($targetImage, 0, 0, 0, 127);
+        imagefilledrectangle($targetImage, 0, 0, $targetWidth, $targetHeight, $transparent);
+    }
+
+    imagecopyresampled(
+        $targetImage,
+        $sourceImage,
+        0,
+        0,
+        0,
+        0,
+        $targetWidth,
+        $targetHeight,
+        $sourceWidth,
+        $sourceHeight
+    );
+
+    imagedestroy($sourceImage);
+
+    $destinationSaved = false;
+    $destinationExt = strtolower((string)pathinfo($destinationPath, PATHINFO_EXTENSION));
+
+    if ($destinationExt === 'webp' && function_exists('imagewebp')) {
+        $destinationSaved = imagewebp($targetImage, $destinationPath, $webpQuality);
+    } elseif ($destinationExt === 'jpg' || $destinationExt === 'jpeg') {
+        $destinationSaved = imagejpeg($targetImage, $destinationPath, $jpegQuality);
+    } elseif ($destinationExt === 'png') {
+        $destinationSaved = imagepng($targetImage, $destinationPath, $pngCompression);
+    } elseif ($destinationExt === 'gif') {
+        $destinationSaved = imagegif($targetImage, $destinationPath);
+    }
+
+    imagedestroy($targetImage);
+
+    if ($destinationSaved && is_file($destinationPath)) {
+        @unlink($sourcePath);
+        return true;
+    }
+
+    if (is_file($destinationPath)) {
+        @unlink($destinationPath);
+    }
+
+    return move_uploaded_file($sourcePath, $destinationPath) || rename($sourcePath, $destinationPath);
+}
+
 function create_unique_username(PDO $pdo, string $usersTable, string $base, ?int $excludeUserId = null): string
 {
     $cleanBase = preg_replace('/[^a-z0-9]+/', '', strtolower(trim($base)) ?? '') ?? '';

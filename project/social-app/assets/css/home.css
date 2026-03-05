@@ -329,6 +329,53 @@
   cursor: pointer;
 }
 
+.remove-photo-item-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.composer-photo-upload-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(16, 27, 35, 0.28), rgba(16, 27, 35, 0.78));
+  color: #f5fbff;
+  display: grid;
+  align-content: end;
+  gap: 0.28rem;
+  padding: 0.45rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.composer-photo-upload-overlay.is-visible {
+  opacity: 1;
+}
+
+.composer-photo-upload-label {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.composer-photo-upload-bar {
+  width: 100%;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+  overflow: hidden;
+}
+
+.composer-photo-upload-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #8ff7dc, #e8fff8);
+  transition: width 0.16s linear;
+}
+
 .remove-photo-btn {
   margin-top: 0.45rem;
   border: 0;
@@ -356,6 +403,15 @@
   color: #fff8f4;
   font-weight: 800;
   cursor: pointer;
+}
+
+.post-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.post-btn.is-loading {
+  background: linear-gradient(120deg, #c55633, #de7d59);
 }
 
 .feed-list {

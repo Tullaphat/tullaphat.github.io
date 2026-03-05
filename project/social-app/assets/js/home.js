@@ -11,6 +11,27 @@ function loadViewer() {
   }
 }
 
+function hasAuthenticatedViewer() {
+  const viewer = loadViewer();
+  if (!viewer || typeof viewer !== "object") {
+    return false;
+  }
+
+  const viewerId = Number(viewer.id || 0);
+  const viewerEmail = String(viewer.email || "").trim();
+
+  return viewerId > 0 || viewerEmail !== "";
+}
+
+function enforceAuthGuard() {
+  if (hasAuthenticatedViewer()) {
+    return true;
+  }
+
+  window.location.replace("index.html");
+  return false;
+}
+
 function getApiBaseUrl() {
   const config = window.APP_CONFIG || {};
   const modeFromQuery = new URLSearchParams(window.location.search).get("mode");
@@ -244,6 +265,51 @@ async function postFormData(endpoint, formData) {
   }
 
   return data;
+}
+
+function postFormDataWithProgress(endpoint, formData, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${getApiBaseUrl()}/${endpoint}`);
+
+    xhr.upload.addEventListener("progress", (event) => {
+      if (!event.lengthComputable || typeof onProgress !== "function") {
+        return;
+      }
+
+      const ratio = event.total > 0 ? Math.min(1, Math.max(0, event.loaded / event.total)) : 0;
+      onProgress({
+        loaded: event.loaded,
+        total: event.total,
+        ratio,
+      });
+    });
+
+    xhr.addEventListener("load", () => {
+      let data = null;
+
+      try {
+        data = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+      } catch {
+        data = null;
+      }
+
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(data);
+        return;
+      }
+
+      const error = new Error(data?.message || "Request failed");
+      error.status = xhr.status;
+      reject(error);
+    });
+
+    xhr.addEventListener("error", () => {
+      reject(new Error("Network error while uploading post."));
+    });
+
+    xhr.send(formData);
+  });
 }
 
 function setFeedStatus(message) {
@@ -717,12 +783,81 @@ function setupComposer() {
   const viewer = loadViewer() || {};
   const userId = Number(viewer.id || 0);
   const selectedPhotos = [];
+  let isPosting = false;
+
+  const updatePhotoUploadProgress = (ratio, stageLabel = "Uploading") => {
+    const clampedRatio = Math.min(1, Math.max(0, Number(ratio) || 0));
+
+    if (!selectedPhotos.length) {
+      return;
+    }
+
+    const totalSize = selectedPhotos.reduce((sum, photo) => sum + Math.max(0, Number(photo.file?.size || 0)), 0);
+
+    if (totalSize <= 0) {
+      const equalPercent = Math.round(clampedRatio * 100);
+      selectedPhotos.forEach((photo) => {
+        photo.progress = equalPercent;
+        photo.progressLabel = `${stageLabel} ${equalPercent}%`;
+      });
+      renderComposerPhotoPreview();
+      return;
+    }
+
+    const uploadedBytes = totalSize * clampedRatio;
+    let consumed = 0;
+
+    selectedPhotos.forEach((photo) => {
+      const size = Math.max(1, Number(photo.file?.size || 0));
+      const remaining = Math.max(0, uploadedBytes - consumed);
+      const photoRatio = Math.min(1, remaining / size);
+      const percent = Math.round(photoRatio * 100);
+
+      photo.progress = percent;
+      photo.progressLabel = `${stageLabel} ${percent}%`;
+      consumed += size;
+    });
+
+    renderComposerPhotoPreview();
+  };
+
+  const setComposerBusyState = (busy) => {
+    isPosting = busy;
+    postBtn.disabled = busy;
+    postBtn.classList.toggle("is-loading", busy);
+    postBtn.textContent = busy ? "Posting..." : "Post";
+    postBtn.setAttribute("aria-busy", busy ? "true" : "false");
+
+    if (composerInput instanceof HTMLTextAreaElement) {
+      composerInput.disabled = busy;
+    }
+
+    if (photoInput instanceof HTMLInputElement) {
+      photoInput.disabled = busy;
+    }
+
+    if (removePhotoBtn instanceof HTMLButtonElement) {
+      removePhotoBtn.disabled = busy;
+    }
+
+    renderComposerPhotoPreview();
+  };
+
+  const setAllPhotoLabels = (label) => {
+    selectedPhotos.forEach((photo) => {
+      const progress = Number(photo.progress || 0);
+      photo.progressLabel = label.includes("%") ? label : `${label} ${progress}%`;
+    });
+    renderComposerPhotoPreview();
+  };
 
   const addSelectedPhoto = (file) => {
     selectedPhotos.push({
       id: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
       file,
       previewUrl: URL.createObjectURL(file),
+      progress: 0,
+      progressLabel: "",
     });
   };
 
@@ -741,12 +876,27 @@ function setupComposer() {
     selectedPhotos.forEach((photo) => {
       const item = document.createElement("div");
       item.className = "composer-photo-thumb";
+      const progress = Math.min(100, Math.max(0, Number(photo.progress) || 0));
+      const label = photo.progressLabel || `Uploading ${progress}%`;
+      const showOverlay = isPosting;
       item.innerHTML = `
         <img src="${photo.previewUrl}" alt="Selected photo" />
+        <div class="composer-photo-upload-overlay ${showOverlay ? "is-visible" : ""}">
+          <p class="composer-photo-upload-label">${label}</p>
+          <div class="composer-photo-upload-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}">
+            <span style="width:${progress}%"></span>
+          </div>
+        </div>
         <button class="remove-photo-item-btn" type="button" data-photo-id="${photo.id}" aria-label="Remove photo">
           <i class="fa-solid fa-xmark" aria-hidden="true"></i>
         </button>
       `;
+
+      const removeButton = item.querySelector(".remove-photo-item-btn");
+      if (removeButton instanceof HTMLButtonElement) {
+        removeButton.disabled = isPosting;
+      }
+
       previewList.appendChild(item);
     });
 
@@ -768,6 +918,10 @@ function setupComposer() {
 
   if (photoInput instanceof HTMLInputElement) {
     photoInput.addEventListener("change", () => {
+      if (isPosting) {
+        return;
+      }
+
       const files = photoInput.files ? Array.from(photoInput.files) : [];
 
       files.forEach((file) => {
@@ -784,7 +938,13 @@ function setupComposer() {
   }
 
   if (removePhotoBtn instanceof HTMLButtonElement) {
-    removePhotoBtn.addEventListener("click", clearSelectedPhoto);
+    removePhotoBtn.addEventListener("click", () => {
+      if (isPosting) {
+        return;
+      }
+
+      clearSelectedPhoto();
+    });
   }
 
   if (previewList instanceof HTMLElement) {
@@ -796,6 +956,10 @@ function setupComposer() {
 
       const removeBtn = rawTarget.closest(".remove-photo-item-btn");
       if (!(removeBtn instanceof HTMLButtonElement)) {
+        return;
+      }
+
+      if (isPosting) {
         return;
       }
 
@@ -812,6 +976,10 @@ function setupComposer() {
   }
 
   postBtn.addEventListener("click", async () => {
+    if (isPosting) {
+      return;
+    }
+
     const value = composerInput.value.trim();
     const hasPhoto = selectedPhotos.length > 0;
 
@@ -825,7 +993,12 @@ function setupComposer() {
       return;
     }
 
-    postBtn.disabled = true;
+    setComposerBusyState(true);
+
+    if (hasPhoto) {
+      setAllPhotoLabels("Preparing");
+      updatePhotoUploadProgress(0, "Uploading");
+    }
 
     try {
       const formData = new FormData();
@@ -836,7 +1009,16 @@ function setupComposer() {
         formData.append("photos[]", photo.file);
       });
 
-      const response = await postFormData("create-post.php", formData);
+      const response = hasPhoto
+        ? await postFormDataWithProgress("create-post.php", formData, ({ ratio }) => {
+            updatePhotoUploadProgress(ratio, "Uploading");
+          })
+        : await postFormData("create-post.php", formData);
+
+      if (hasPhoto) {
+        updatePhotoUploadProgress(1, "Processing");
+      }
+
       const post = response?.data?.post;
 
       if (post) {
@@ -852,9 +1034,12 @@ function setupComposer() {
       composerInput.value = "";
       clearSelectedPhoto();
     } catch (error) {
+      if (hasPhoto) {
+        setAllPhotoLabels("Upload failed");
+      }
       window.alert(`Cannot create post: ${error.message}`);
     } finally {
-      postBtn.disabled = false;
+      setComposerBusyState(false);
     }
   });
 }
@@ -1467,17 +1652,19 @@ function setupLogout() {
   });
 }
 
-setupViewer();
-setupComposer();
-setupReactions();
-setupComments();
-setupFollowButtons();
-setupTopbarMenu();
-setupPostMenuActions();
-setupMobileNavAndSearch();
-setupSearchNavigation();
-setupPhotoLightbox();
-updateBookmarkCount();
-setupLogout();
-loadSuggestedUsers();
-loadFeedPosts();
+if (enforceAuthGuard()) {
+  setupViewer();
+  setupComposer();
+  setupReactions();
+  setupComments();
+  setupFollowButtons();
+  setupTopbarMenu();
+  setupPostMenuActions();
+  setupMobileNavAndSearch();
+  setupSearchNavigation();
+  setupPhotoLightbox();
+  updateBookmarkCount();
+  setupLogout();
+  loadSuggestedUsers();
+  loadFeedPosts();
+}
