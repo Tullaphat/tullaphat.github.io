@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Social App | Home</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="assets/css/home-page.css" />
+  </head>
+  <body class="home-body has-mobile-tabbar">
+    <header class="home-topbar">
+      <div class="brand">Social App</div>
+      <div class="topbar-search-wrap">
+        <input id="search-input" type="search" placeholder="Search people, posts, groups" />
+      </div>
+      <div class="topbar-actions">
+        <button
+          id="mobile-search-toggle"
+          class="icon-btn mobile-search-btn"
+          type="button"
+          aria-label="Open search"
+          aria-expanded="false"
+        >
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        </button>
+
+        <button id="notification-btn" class="icon-btn notify-btn" type="button" aria-label="Notifications">
+          <i class="fa-regular fa-bell" aria-hidden="true"></i>
+          <span class="notify-dot"></span>
+        </button>
+
+        <div class="user-menu-wrap">
+          <button id="user-menu-toggle" class="icon-btn user-menu-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="User menu">
+            <i class="fa-regular fa-user" aria-hidden="true"></i>
+          </button>
+          <div id="user-menu" class="user-menu" role="menu" hidden>
+            <button id="user-setting-btn" class="user-menu-item" role="menuitem" type="button">
+              <i class="fa-solid fa-gear" aria-hidden="true"></i>
+              <span>User Setting</span>
+            </button>
+            <button id="logout-btn" class="user-menu-item" role="menuitem" type="button">
+              <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section id="mobile-search-panel" class="mobile-search-panel" hidden>
+      <input
+        id="mobile-search-input"
+        type="search"
+        placeholder="Search people, posts, groups"
+        aria-label="Search"
+      />
+    </section>
+
+    <main class="home-layout">
+      <aside id="mobile-nav-panel" class="home-left card-glass">
+        <section class="profile-mini">
+          <div class="avatar"></div>
+          <div>
+            <h2 id="welcome-name">Tullaphat User</h2>
+          </div>
+        </section>
+
+        <nav class="left-nav">
+          <a href="#" class="active">Feed</a>
+          <a href="friends.html">Friends</a>
+          <a href="bookmarks.html">Bookmarks</a>
+        </nav>
+      </aside>
+
+      <section class="home-center">
+        <section class="composer card-glass">
+          <div class="composer-head">
+            <div class="avatar small"></div>
+            <textarea
+              id="composer-input"
+              rows="3"
+              placeholder="What's on your mind today?"
+            ></textarea>
+          </div>
+
+          <div id="composer-photo-preview-wrap" class="composer-photo-preview" hidden>
+            <div id="composer-photo-preview-list" class="composer-photo-preview-list"></div>
+            <button id="remove-photo-btn" class="remove-photo-btn" type="button">
+              <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+              <span>Remove all photos</span>
+            </button>
+          </div>
+
+          <div class="composer-actions">
+            <div class="composer-tools">
+              <label for="composer-photo-input" class="photo-picker-btn">
+                <i class="fa-regular fa-image" aria-hidden="true"></i>
+                <span>Photo</span>
+              </label>
+              <input id="composer-photo-input" type="file" accept="image/*" multiple hidden />
+              <span class="hint">Tip: post text, photo, or both.</span>
+            </div>
+            <button id="post-btn" class="post-btn" type="button">Post</button>
+          </div>
+        </section>
+
+        <section id="feed-list" class="feed-list"></section>
+      </section>
+
+      <aside class="home-right card-glass">
+        <section>
+          <h2>People You May Know</h2>
+          <ul id="friend-suggest-list" class="friend-suggest-list"></ul>
+        </section>
+      </aside>
+    </main>
+
+    <nav class="mobile-tabbar" aria-label="Primary">
+      <a class="mobile-tabbar-item active" href="home.html">
+        <i class="fa-solid fa-house" aria-hidden="true"></i>
+        <span>Feed</span>
+      </a>
+      <a class="mobile-tabbar-item" href="friends.html">
+        <i class="fa-solid fa-user-group" aria-hidden="true"></i>
+        <span>Friends</span>
+      </a>
+      <a class="mobile-tabbar-item" href="bookmarks.html">
+        <i class="fa-solid fa-bookmark" aria-hidden="true"></i>
+        <span>Bookmarks</span>
+      </a>
+    </nav>
+
+    <section id="photo-lightbox" class="photo-lightbox" hidden>
+      <button id="lightbox-close" class="lightbox-close" type="button" aria-label="Close photo viewer">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+      <button id="lightbox-prev" class="lightbox-nav prev" type="button" aria-label="Previous photo">
+        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+      </button>
+      <img id="lightbox-image" class="lightbox-image" src="" alt="Post photo enlarged" />
+      <button id="lightbox-next" class="lightbox-nav next" type="button" aria-label="Next photo">
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      </button>
+      <p id="lightbox-counter" class="lightbox-counter"></p>
+    </section>
+
+    <script src="assets/js/app-config.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/home.js"></script>
+  </body>
+</html>

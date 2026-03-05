@@ -1,0 +1,219 @@
+:root {
+  --search-bg-a: #eaf2f4;
+  --search-bg-b: #f5efe1;
+  --search-card: rgba(255, 255, 255, 0.86);
+  --search-border: rgba(28, 32, 38, 0.12);
+  --search-ink: #1d2730;
+  --search-soft: #5a6775;
+  --search-brand: #0d6b60;
+  --search-accent: #d2643f;
+}
+
+.search-body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--search-ink);
+  background:
+    radial-gradient(circle at 6% 12%, rgba(13, 107, 96, 0.2), transparent 30%),
+    radial-gradient(circle at 92% 88%, rgba(210, 100, 63, 0.2), transparent 35%),
+    linear-gradient(130deg, var(--search-bg-a), var(--search-bg-b));
+}
+
+.search-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 14;
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--search-border);
+  background: rgba(250, 252, 252, 0.84);
+  backdrop-filter: blur(12px);
+}
+
+.brand {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--search-brand);
+  text-decoration: none;
+}
+
+.search-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+}
+
+.search-form input {
+  width: 100%;
+  border: 1px solid var(--search-border);
+  border-radius: 999px;
+  padding: 0.68rem 1rem;
+  font: inherit;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.search-submit-btn,
+.back-home-link,
+.follow-result-btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.58rem 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.search-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--search-accent);
+  color: #fff8f4;
+}
+
+.back-home-link {
+  text-decoration: none;
+  background: rgba(13, 107, 96, 0.14);
+  color: #114a43;
+  border: 1px solid rgba(13, 107, 96, 0.28);
+}
+
+.search-layout {
+  width: min(1200px, 100%);
+  margin: 1rem auto;
+  padding: 0 0.85rem 3rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 260px minmax(0, 1fr);
+}
+
+.card-glass {
+  border: 1px solid var(--search-border);
+  border-radius: 24px;
+  background: var(--search-card);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 14px 30px rgba(18, 30, 35, 0.12);
+}
+
+.search-panel {
+  padding: 1rem;
+}
+
+.search-panel-head h1 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.search-panel-head p {
+  margin: 0.35rem 0 0;
+  color: var(--search-soft);
+}
+
+.search-result-list {
+  margin-top: 0.95rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.search-user-card {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid var(--search-border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.74);
+  padding: 0.68rem 0.78rem;
+}
+
+.search-user-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  flex: 0 0 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #f2fbff;
+  background: linear-gradient(145deg, var(--search-brand), #49a89a);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+}
+
+.search-user-meta {
+  min-width: 0;
+}
+
+.search-user-meta h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.search-user-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.search-user-link:hover {
+  text-decoration: underline;
+}
+
+.search-user-meta p {
+  margin: 0.2rem 0 0;
+  color: var(--search-soft);
+  font-size: 0.86rem;
+}
+
+.follow-result-btn {
+  margin-left: auto;
+  border: 1px solid rgba(13, 107, 96, 0.32);
+  background: rgba(13, 107, 96, 0.12);
+  color: #13463f;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.follow-result-btn.following {
+  border-color: rgba(17, 97, 65, 0.36);
+  background: rgba(17, 97, 65, 0.2);
+}
+
+.search-empty {
+  border-radius: 14px;
+  padding: 0.7rem 0.8rem;
+  color: var(--search-soft);
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px dashed var(--search-border);
+}
+
+@media (max-width: 760px) {
+  .search-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .search-topbar {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .brand {
+    font-size: 1.2rem;
+  }
+
+  .search-form {
+    grid-template-columns: 1fr;
+  }
+
+  .back-home-link {
+    justify-self: start;
+  }
+
+  .search-user-card {
+    align-items: flex-start;
+  }
+}

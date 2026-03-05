@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Social App | User Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="assets/css/settings-page.css" />
+  </head>
+  <body class="settings-body has-mobile-tabbar">
+    <header class="app-topbar">
+      <a class="app-brand" href="home.html">Social App</a>
+      <div class="app-topbar-search">
+        <input id="topbar-search-input" type="search" placeholder="Search people, posts, groups" />
+      </div>
+      <div class="app-topbar-actions">
+        <button id="app-notification-btn" class="app-icon-btn app-notify-btn" type="button" aria-label="Notifications">
+          <i class="fa-regular fa-bell" aria-hidden="true"></i>
+          <span class="app-notify-dot"></span>
+        </button>
+        <div class="app-user-menu-wrap">
+          <button id="app-user-menu-toggle" class="app-icon-btn app-user-menu-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="User menu">
+            <i class="fa-regular fa-user" aria-hidden="true"></i>
+          </button>
+          <div id="app-user-menu" class="app-user-menu" role="menu" hidden>
+            <button id="app-user-setting-btn" class="app-user-menu-item" role="menuitem" type="button">
+              <i class="fa-solid fa-gear" aria-hidden="true"></i>
+              <span>User Setting</span>
+            </button>
+            <button id="app-logout-btn" class="app-user-menu-item" role="menuitem" type="button">
+              <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="settings-layout">
+      <aside class="app-left-sidebar">
+        <section class="app-left-profile">
+          <div class="app-left-avatar" id="app-left-avatar"></div>
+          <div>
+            <h2 id="app-left-name">User</h2>
+            <p id="app-left-username">@user</p>
+          </div>
+        </section>
+        <nav class="app-left-nav">
+          <a href="home.html">Feed</a>
+          <a href="friends.html">Friends</a>
+          <a href="bookmarks.html">Bookmarks</a>
+          <!-- <a class="active" href="settings.html">Settings</a> -->
+        </nav>
+      </aside>
+
+      <section class="settings-shell">
+        <header class="settings-header card-glass">
+          <a href="home.html" class="back-link">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+            <span>Back to Home</span>
+          </a>
+          <h1>User Settings</h1>
+        </header>
+
+        <section class="settings-panel card-glass">
+          <form id="settings-form" novalidate>
+          <section class="profile-pic-section">
+            <div class="profile-preview" id="profile-preview"></div>
+            <div class="profile-actions">
+              <label for="profile-picture-input" class="upload-btn">
+                <i class="fa-regular fa-image" aria-hidden="true"></i>
+                <span>Upload Profile Picture</span>
+              </label>
+              <input id="profile-picture-input" type="file" accept="image/*" hidden />
+              <button id="remove-profile-picture-btn" class="remove-btn" type="button">Remove picture</button>
+            </div>
+          </section>
+
+          <div class="settings-grid">
+            <div>
+              <label for="settings-first-name">First name</label>
+              <input id="settings-first-name" name="firstName" type="text" required />
+            </div>
+            <div>
+              <label for="settings-last-name">Last name</label>
+              <input id="settings-last-name" name="lastName" type="text" required />
+            </div>
+          </div>
+
+          <label for="settings-email">Email</label>
+          <input id="settings-email" name="email" type="email" required />
+
+          <label for="settings-username">Username</label>
+          <input
+            id="settings-username"
+            name="username"
+            type="text"
+            required
+            minlength="3"
+            maxlength="30"
+            pattern="[a-z0-9_]+"
+            placeholder="lowercase letters, numbers, underscore"
+          />
+
+          <label for="settings-password">Password</label>
+          <input
+            id="settings-password"
+            name="password"
+            type="password"
+            minlength="8"
+            placeholder="Leave blank to keep current password"
+          />
+
+          <fieldset class="gender-group">
+            <legend>Gender</legend>
+            <label class="radio-row" for="settings-gender-female">
+              <input id="settings-gender-female" name="gender" value="female" type="radio" />
+              <span>Female</span>
+            </label>
+            <label class="radio-row" for="settings-gender-male">
+              <input id="settings-gender-male" name="gender" value="male" type="radio" />
+              <span>Male</span>
+            </label>
+            <label class="radio-row" for="settings-gender-other">
+              <input id="settings-gender-other" name="gender" value="other" type="radio" />
+              <span>Other</span>
+            </label>
+          </fieldset>
+
+          <p id="settings-message" class="settings-message" role="status" aria-live="polite"></p>
+
+          <div class="form-actions">
+            <button class="btn-secondary" type="button" id="cancel-settings-btn">Cancel</button>
+            <button class="btn-primary" type="submit">Save Changes</button>
+          </div>
+          </form>
+        </section>
+      </section>
+    </main>
+
+    <nav class="mobile-tabbar" aria-label="Primary">
+      <a class="mobile-tabbar-item" href="home.html">
+        <i class="fa-solid fa-house" aria-hidden="true"></i>
+        <span>Feed</span>
+      </a>
+      <a class="mobile-tabbar-item" href="friends.html">
+        <i class="fa-solid fa-user-group" aria-hidden="true"></i>
+        <span>Friends</span>
+      </a>
+      <a class="mobile-tabbar-item" href="bookmarks.html">
+        <i class="fa-solid fa-bookmark" aria-hidden="true"></i>
+        <span>Bookmarks</span>
+      </a>
+    </nav>
+
+    <script src="assets/js/app-config.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/navbar.js"></script>
+    <script src="assets/js/settings.js"></script>
+  </body>
+</html>

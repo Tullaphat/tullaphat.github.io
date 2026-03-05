@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Social App | Search</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="assets/css/search-page.css" />
+  </head>
+  <body class="search-body has-mobile-tabbar">
+    <header class="app-topbar">
+      <a class="app-brand" href="home.html">Social App</a>
+      <div class="app-topbar-search">
+        <input id="topbar-search-input" type="search" placeholder="Search people, posts, groups" />
+      </div>
+      <div class="app-topbar-actions">
+        <button id="app-notification-btn" class="app-icon-btn app-notify-btn" type="button" aria-label="Notifications">
+          <i class="fa-regular fa-bell" aria-hidden="true"></i>
+          <span class="app-notify-dot"></span>
+        </button>
+        <div class="app-user-menu-wrap">
+          <button id="app-user-menu-toggle" class="app-icon-btn app-user-menu-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="User menu">
+            <i class="fa-regular fa-user" aria-hidden="true"></i>
+          </button>
+          <div id="app-user-menu" class="app-user-menu" role="menu" hidden>
+            <button id="app-user-setting-btn" class="app-user-menu-item" role="menuitem" type="button">
+              <i class="fa-solid fa-gear" aria-hidden="true"></i>
+              <span>User Setting</span>
+            </button>
+            <button id="app-logout-btn" class="app-user-menu-item" role="menuitem" type="button">
+              <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="search-layout">
+      <aside class="app-left-sidebar">
+        <section class="app-left-profile">
+          <div class="app-left-avatar" id="app-left-avatar"></div>
+          <div>
+            <h2 id="app-left-name">User</h2>
+            <p id="app-left-username">@user</p>
+          </div>
+        </section>
+        <nav class="app-left-nav">
+          <a href="home.html">Feed</a>
+          <a href="friends.html">Friends</a>
+          <a href="bookmarks.html">Bookmarks</a>
+          <!-- <a href="settings.html">Settings</a> -->
+        </nav>
+      </aside>
+
+      <section class="search-panel card-glass">
+        <header class="search-panel-head">
+          <h1>Search People</h1>
+          <p>Use the top search box to find people by first name, last name, or username.</p>
+          <p id="search-summary">Type a name to find users.</p>
+        </header>
+        <div id="search-result-list" class="search-result-list"></div>
+      </section>
+    </main>
+
+    <nav class="mobile-tabbar" aria-label="Primary">
+      <a class="mobile-tabbar-item active" href="home.html">
+        <i class="fa-solid fa-house" aria-hidden="true"></i>
+        <span>Feed</span>
+      </a>
+      <a class="mobile-tabbar-item" href="friends.html">
+        <i class="fa-solid fa-user-group" aria-hidden="true"></i>
+        <span>Friends</span>
+      </a>
+      <a class="mobile-tabbar-item" href="bookmarks.html">
+        <i class="fa-solid fa-bookmark" aria-hidden="true"></i>
+        <span>Bookmarks</span>
+      </a>
+    </nav>
+
+    <script src="assets/js/app-config.js"></script>
+    <script src="assets/js/navbar.js"></script>
+    <script src="assets/js/search.js"></script>
+  </body>
+</html>

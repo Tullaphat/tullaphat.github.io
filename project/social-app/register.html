@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Social App | Register</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/auth-page.css" />
+  </head>
+  <body class="auth-body auth-body-register">
+    <main class="auth-shell">
+      <section class="auth-panel auth-panel-brand" aria-label="Brand intro">
+        <p class="brand-kicker">Join Social App</p>
+        <h1>Create your profile.</h1>
+        <p class="brand-copy">
+          Set up your account in seconds and start sharing updates with your friends.
+        </p>
+      </section>
+
+      <section class="auth-panel auth-panel-form" aria-label="Register form">
+        <div class="form-header">
+          <h2>Register</h2>
+          <p>Enter your details to get started.</p>
+        </div>
+
+        <form id="register-form" novalidate>
+          <div class="name-grid">
+            <div>
+              <label for="first-name">First name</label>
+              <input
+                id="first-name"
+                name="firstName"
+                type="text"
+                autocomplete="given-name"
+                placeholder="Jane"
+                required
+              />
+            </div>
+            <div>
+              <label for="last-name">Last name</label>
+              <input
+                id="last-name"
+                name="lastName"
+                type="text"
+                autocomplete="family-name"
+                placeholder="Doe"
+                required
+              />
+            </div>
+          </div>
+
+          <label for="register-email">Email</label>
+          <input
+            id="register-email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            placeholder="you@example.com"
+            required
+          />
+
+          <label for="register-password">Password</label>
+          <input
+            id="register-password"
+            name="password"
+            type="password"
+            autocomplete="new-password"
+            placeholder="At least 8 characters"
+            required
+            minlength="8"
+          />
+
+          <fieldset class="gender-group">
+            <legend>Gender</legend>
+            <label for="gender-female" class="radio-row">
+              <input id="gender-female" name="gender" type="radio" value="female" required />
+              <span>Female</span>
+            </label>
+            <label for="gender-male" class="radio-row">
+              <input id="gender-male" name="gender" type="radio" value="male" />
+              <span>Male</span>
+            </label>
+            <label for="gender-other" class="radio-row">
+              <input id="gender-other" name="gender" type="radio" value="other" />
+              <span>Other</span>
+            </label>
+          </fieldset>
+
+          <p class="form-message" id="register-message" role="status" aria-live="polite"></p>
+
+          <button type="submit" class="btn-primary">Create account</button>
+        </form>
+
+        <p class="switch-link">
+          Already have an account?
+          <a href="index.html">Back to login</a>
+        </p>
+      </section>
+    </main>
+
+    <script src="assets/js/app-config.js"></script>
+    <script src="assets/js/auth.js"></script>
+  </body>
+</html>
