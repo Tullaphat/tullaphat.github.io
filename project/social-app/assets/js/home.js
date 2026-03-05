@@ -641,12 +641,14 @@ function setupPostMenuActions() {
 function setupViewer() {
   const viewer = loadViewer() || {};
   const welcomeName = document.getElementById("welcome-name");
+  const welcomeUsername = document.getElementById("welcome-username");
   const avatarNodes = document.querySelectorAll(".avatar");
   const userMenuToggle = document.getElementById("user-menu-toggle");
   const userMenuIcon = userMenuToggle ? userMenuToggle.querySelector("i") : null;
 
   const firstName = viewer.firstName || "User";
   const lastName = viewer.lastName || "";
+  const username = String(viewer.username || "").trim().toLowerCase();
   const profileImage =
     resolveProfileImageUrl(viewer.profileImageUrl || "", viewer.profileImageFilename || "") ||
     viewer.profileImage ||
@@ -655,6 +657,10 @@ function setupViewer() {
 
   if (welcomeName instanceof HTMLElement) {
     welcomeName.textContent = `${firstName} ${lastName}`.trim();
+  }
+
+  if (welcomeUsername instanceof HTMLElement) {
+    welcomeUsername.textContent = username ? `@${username}` : "@user";
   }
 
   avatarNodes.forEach((node) => {

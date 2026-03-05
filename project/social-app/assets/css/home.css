@@ -22,7 +22,7 @@
 .home-topbar {
   position: sticky;
   top: 0;
-  z-index: 15;
+  z-index: 50;
   display: grid;
   grid-template-columns: 220px 1fr auto;
   align-items: center;
@@ -46,6 +46,7 @@
   border-radius: 999px;
   padding: 0.7rem 1rem;
   background: rgba(255, 255, 255, 0.72);
+  font: inherit;
 }
 
 .topbar-actions {
@@ -152,7 +153,7 @@
 .home-layout {
   width: min(1200px, 100%);
   margin: 1rem auto;
-  padding: 0 0.8rem 4rem;
+  padding: 0 0.85rem 3rem;
   display: grid;
   gap: 1rem;
   grid-template-columns: 260px minmax(0, 1fr) 280px;
@@ -160,7 +161,7 @@
 
 .card-glass {
   border: 1px solid var(--home-border);
-  border-radius: 26px;
+  border-radius: 24px;
   background: var(--home-card);
   backdrop-filter: blur(10px);
   box-shadow: 0 14px 30px rgba(18, 30, 35, 0.12);
@@ -865,7 +866,7 @@
   .home-layout {
     grid-template-columns: 1fr;
     margin-top: 0.7rem;
-    padding: 0 0.5rem 3.2rem;
+    padding: 0 0.85rem 3rem;
   }
 
   .home-left {

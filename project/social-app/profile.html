@@ -19,7 +19,7 @@
     />
     <link rel="stylesheet" href="assets/css/home-page.css" />
   </head>
-  <body class="home-body profile-body">
+  <body class="home-body profile-body has-mobile-tabbar">
     <header class="home-topbar">
       <div class="brand">Social App</div>
       <div class="topbar-search-wrap">
@@ -119,6 +119,21 @@
       </button>
       <p id="lightbox-counter" class="lightbox-counter"></p>
     </section>
+
+    <nav class="mobile-tabbar" aria-label="Primary">
+      <a class="mobile-tabbar-item" href="home.html">
+        <i class="fa-solid fa-house" aria-hidden="true"></i>
+        <span>Feed</span>
+      </a>
+      <a class="mobile-tabbar-item" href="friends.html">
+        <i class="fa-solid fa-user-group" aria-hidden="true"></i>
+        <span>Friends</span>
+      </a>
+      <a class="mobile-tabbar-item" href="bookmarks.html">
+        <i class="fa-solid fa-bookmark" aria-hidden="true"></i>
+        <span>Bookmarks</span>
+      </a>
+    </nav>
 
     <script src="assets/js/app-config.js"></script>
     <script src="assets/js/auth.js"></script>
