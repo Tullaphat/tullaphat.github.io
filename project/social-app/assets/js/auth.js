@@ -54,20 +54,19 @@ async function postJson(endpoint, payload) {
   });
 
   let data = null;
-  const responseContentType = response.headers.get("content-type") || "";
+  let rawText = "";
 
-  if (responseContentType.includes("application/json")) {
+  try {
+    rawText = await response.text();
+  } catch {
+    rawText = "";
+  }
+
+  if (rawText) {
     try {
-      data = await response.json();
+      data = JSON.parse(rawText);
     } catch {
-      data = null;
-    }
-  } else {
-    try {
-      const rawText = await response.text();
-      data = rawText ? { message: rawText } : null;
-    } catch {
-      data = null;
+      data = { message: rawText };
     }
   }
 
@@ -75,10 +74,14 @@ async function postJson(endpoint, payload) {
     const backendMessage = String(data?.message || "").trim();
     const backendDetail = String(data?.error || "").trim();
     const statusText = `HTTP ${response.status}`;
-    const combinedMessage = [backendMessage || statusText, backendDetail].filter(Boolean).join(" | ");
+    const responsePreview = rawText ? rawText.replace(/\s+/g, " ").trim().slice(0, 240) : "";
+    const combinedMessage = [backendMessage || statusText, backendDetail || responsePreview]
+      .filter(Boolean)
+      .join(" | ");
     const error = new Error(combinedMessage || "Request failed");
     error.status = response.status;
     error.payload = data;
+    error.rawResponse = rawText;
     error.endpoint = endpoint;
     throw error;
   }
