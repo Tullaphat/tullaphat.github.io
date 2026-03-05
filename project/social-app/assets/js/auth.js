@@ -54,17 +54,32 @@ async function postJson(endpoint, payload) {
   });
 
   let data = null;
+  const responseContentType = response.headers.get("content-type") || "";
 
-  try {
-    data = await response.json();
-  } catch {
-    data = null;
+  if (responseContentType.includes("application/json")) {
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+  } else {
+    try {
+      const rawText = await response.text();
+      data = rawText ? { message: rawText } : null;
+    } catch {
+      data = null;
+    }
   }
 
   if (!response.ok) {
-    const error = new Error(data?.message || "Request failed");
+    const backendMessage = String(data?.message || "").trim();
+    const backendDetail = String(data?.error || "").trim();
+    const statusText = `HTTP ${response.status}`;
+    const combinedMessage = [backendMessage || statusText, backendDetail].filter(Boolean).join(" | ");
+    const error = new Error(combinedMessage || "Request failed");
     error.status = response.status;
     error.payload = data;
+    error.endpoint = endpoint;
     throw error;
   }
 
@@ -72,6 +87,10 @@ async function postJson(endpoint, payload) {
 }
 
 function setFormMessage(node, message, state) {
+  if (!(node instanceof HTMLElement)) {
+    return;
+  }
+
   node.textContent = message;
   node.classList.remove("error", "success");
 
@@ -82,6 +101,16 @@ function setFormMessage(node, message, state) {
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function formatRequestError(error, fallbackText) {
+  const status = Number(error?.status || 0);
+  const endpoint = String(error?.endpoint || "").trim();
+  const baseMessage = String(error?.message || "").trim() || fallbackText;
+  const statusPrefix = status > 0 ? `[${status}] ` : "";
+  const endpointSuffix = endpoint ? ` (${endpoint})` : "";
+
+  return `${statusPrefix}${baseMessage}${endpointSuffix}`;
 }
 
 function setupLoginForm() {
@@ -145,7 +174,7 @@ function setupLoginForm() {
     } catch (error) {
       setFormMessage(
         message,
-        `Login failed: ${error.message}. Current mode: ${APP_RUNTIME.mode}.`,
+        `Login failed: ${formatRequestError(error, "Request failed")}. Current mode: ${APP_RUNTIME.mode}.`,
         "error"
       );
       console.error("Login error", error);
@@ -208,7 +237,7 @@ function setupRegisterForm() {
     } catch (error) {
       setFormMessage(
         message,
-        `Register failed: ${error.message}. Current mode: ${APP_RUNTIME.mode}.`,
+        `Register failed: ${formatRequestError(error, "Request failed")}. Current mode: ${APP_RUNTIME.mode}.`,
         "error"
       );
       console.error("Register error", error);

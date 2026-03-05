@@ -33,9 +33,29 @@ if ($password === '') {
 try {
     $pdo = db_connection();
     $usersTable = users_table_name();
+    $usersRawTable = db_config()['table_prefix'] . 'users';
+    $hasUsernameColumn = table_column_exists($usersRawTable, 'username');
+    $hasProfileImageFilenameColumn = table_column_exists($usersRawTable, 'profile_image_filename');
+
+    $selectFields = [
+        'id',
+        'email',
+        'password_hash',
+        'first_name',
+        'last_name',
+        'gender',
+    ];
+
+    if ($hasUsernameColumn) {
+        $selectFields[] = 'username';
+    }
+
+    if ($hasProfileImageFilenameColumn) {
+        $selectFields[] = 'profile_image_filename';
+    }
 
     $sql = "
-        SELECT id, email, username, password_hash, first_name, last_name, gender, profile_image_filename
+        SELECT " . implode(', ', $selectFields) . "
         FROM {$usersTable}
         WHERE email = :email
         LIMIT 1
@@ -55,16 +75,26 @@ try {
 
     $username = trim((string)($user['username'] ?? ''));
     if ($username === '') {
-        $usernameBase = normalize_username_base((string)$user['first_name'], (string)$user['last_name'], (string)$user['email']);
-        $username = create_unique_username($pdo, $usersTable, $usernameBase, (int)$user['id']);
+        if (!$hasUsernameColumn) {
+            $username = fallback_username_from_id((int)$user['id']);
+        }
 
-        $updateUsernameSql = "UPDATE {$usersTable} SET username = :username WHERE id = :id LIMIT 1";
-        $updateUsernameStmt = $pdo->prepare($updateUsernameSql);
-        $updateUsernameStmt->execute([
-            'username' => $username,
-            'id' => (int)$user['id'],
-        ]);
+        $usernameBase = normalize_username_base((string)$user['first_name'], (string)$user['last_name'], (string)$user['email']);
+        if ($hasUsernameColumn) {
+            $username = create_unique_username($pdo, $usersTable, $usernameBase, (int)$user['id']);
+
+            $updateUsernameSql = "UPDATE {$usersTable} SET username = :username WHERE id = :id LIMIT 1";
+            $updateUsernameStmt = $pdo->prepare($updateUsernameSql);
+            $updateUsernameStmt->execute([
+                'username' => $username,
+                'id' => (int)$user['id'],
+            ]);
+        }
     }
+
+    $profileImageFilename = $hasProfileImageFilenameColumn
+        ? (string)($user['profile_image_filename'] ?? '')
+        : '';
 
     $token = bin2hex(random_bytes(24));
     $expiresInSeconds = $rememberMe ? 2592000 : 86400;
@@ -83,8 +113,8 @@ try {
                 'firstName' => $user['first_name'],
                 'lastName' => $user['last_name'],
                 'gender' => $user['gender'],
-                'profileImageFilename' => $user['profile_image_filename'],
-                'profileImageUrl' => profile_image_url($user['profile_image_filename']),
+                'profileImageFilename' => $profileImageFilename,
+                'profileImageUrl' => profile_image_url($profileImageFilename),
             ],
         ],
     ]);
