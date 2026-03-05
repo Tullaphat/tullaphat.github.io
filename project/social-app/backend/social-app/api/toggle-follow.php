@@ -32,14 +32,23 @@ try {
     $usersTable = users_table_name();
     $followsTable = follows_table_name();
 
+    if (!follows_table_exists()) {
+        json_response(503, [
+            'success' => false,
+            'message' => 'Follow feature is not available yet. Database migration for follows table is missing.',
+        ]);
+    }
+
     $existsSql = "SELECT id FROM {$usersTable} WHERE id = :id LIMIT 1";
-    $existsStmt = $pdo->prepare($existsSql);
+    $followerExistsStmt = $pdo->prepare($existsSql);
+    $followerExistsStmt->execute(['id' => $followerUserId]);
+    $followerExists = $followerExistsStmt->fetch();
+    $followerExistsStmt->closeCursor();
 
-    $existsStmt->execute(['id' => $followerUserId]);
-    $followerExists = $existsStmt->fetch();
-
-    $existsStmt->execute(['id' => $followingUserId]);
-    $targetExists = $existsStmt->fetch();
+    $targetExistsStmt = $pdo->prepare($existsSql);
+    $targetExistsStmt->execute(['id' => $followingUserId]);
+    $targetExists = $targetExistsStmt->fetch();
+    $targetExistsStmt->closeCursor();
 
     if (!$followerExists || !$targetExists) {
         json_response(404, [
@@ -94,6 +103,12 @@ try {
     json_response(500, [
         'success' => false,
         'message' => 'Database error while updating follow status.',
+        'error' => $exception->getMessage(),
+    ]);
+} catch (Throwable $exception) {
+    json_response(500, [
+        'success' => false,
+        'message' => 'Server error while updating follow status.',
         'error' => $exception->getMessage(),
     ]);
 }
