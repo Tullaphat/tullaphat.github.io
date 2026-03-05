@@ -49,9 +49,9 @@ function require_post_method(): void
     }
 }
 
-function parse_bool(mixed $value): bool
+function parse_bool($value): bool
 {
-    return filter_var($value, FILTER_VALIDATE_BOOL) === true;
+    return filter_var($value, FILTER_VALIDATE_BOOLEAN) === true;
 }
 
 function app_base_url(): string

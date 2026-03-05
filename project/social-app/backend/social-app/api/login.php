@@ -14,7 +14,7 @@ $input = read_request_data();
 $email = trim((string)($input['email'] ?? ''));
 $password = (string)($input['password'] ?? '');
 $rememberMeRaw = $input['rememberMe'] ?? false;
-$rememberMe = filter_var($rememberMeRaw, FILTER_VALIDATE_BOOL);
+$rememberMe = filter_var($rememberMeRaw, FILTER_VALIDATE_BOOLEAN);
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     json_response(422, [
@@ -122,6 +122,12 @@ try {
     json_response(500, [
         'success' => false,
         'message' => 'Database error during login.',
+        'error' => $exception->getMessage(),
+    ]);
+} catch (Throwable $exception) {
+    json_response(500, [
+        'success' => false,
+        'message' => 'Server error during login.',
         'error' => $exception->getMessage(),
     ]);
 }
